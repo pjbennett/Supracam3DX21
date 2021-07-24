@@ -1,0 +1,728 @@
+
+          Comtrol(tm) RocketPort(R) Infinity/Express Series
+              Device Driver for Linux Operating Systems
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+NOTATION USED IN EXAMPLES
+
+
+In this document command line examples will be show with a shell
+prompt of '#' for commands executed as root and '$' for commands
+executed as a normal user.  The '#' or '$' shell prompt should not be
+typed by the user when following these examples.
+
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+PRODUCT OVERVIEW
+
+
+This driver provides a loadable kernel driver for the Comtrol
+RocketPort boards. These boards provide 4, 8, 16, or 32 high-speed
+serial ports. This driver supports up to a 256 ports using any
+combination of interface boards on any number of boards.
+
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+LATEST DRIVER VERSION
+
+
+If you unpackaged this README file from the driver assembly on the CD,
+you may want to download the latest driver from 
+
+  ftp://ftp.comtrol.com/html/default.htm
+
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+SYSTEM REQUIREMENTS
+
+
+The driver requires Linux kernel version 2.6.25 or newer.
+
+For kernels older than 2.6.25, please use the legacy 1.x driver
+versions.
+
+In order to build the driver, the kernel sources or headers for the
+running kernel are required.
+
+These are located by the driver using a symbolic link, which points to
+the base of the kernel source tree. By convention, this link is
+/lib/modules/<kernel version>/build, which is created by all major
+Linux distributions, RPM installs, or by running make dep on the
+source.  This symlink must point to the same kernel source version as
+is running on the machine.
+
+If a build symlink is not found, the driver searches for a symlink 
+named /usr/src/linux pointing to the source tree. Users who have no 
+build symlink can create this in order to build the driver.
+
+For example, if the kernel release (uname -r) is 2.6.31, and the source
+is installed in /usr/src/linux-2.6.31, the alternative symlink can be
+created by:
+   # cd /usr/src
+   # ln -s linux-2.6.31 linux
+
+If desired, the driver can be built for a specific kernel by
+explicitly specify the kernel build directory on the command line when
+invoking make.  This allows building for a kernel other than the one
+currently running:
+
+    $ make LINUX_SRC=/usr/src/linux-3.5.7
+ or
+    $ make LINUX_SRC=/lib/modules/3.5.7/build
+
+NOTE: While the driver can be built for any kernel version for which a
+      kernel build directory is available, the "make install" command
+      will only install the driver for the currently running kernel
+      version.
+
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+PORT MONITORING
+
+If you have a sufficiently modern Linux kernel (3.10 or later), you
+can include an optional port monitoring feature in the driver when it
+is built.  This feature is enabled by adding RP2_MONITOR_ENABLE=y to the
+make command line:
+
+    $ make clean
+    $ make RP2_MONITOR_ENABLE=y
+
+[If you do a "make RP2_MONITOR_ENABLE=y" when the driver has already
+been built, the driver will _not_ get recompiled and the option won't
+be enabled.  You need to do a "make clean" first in order to force a
+rebuild.]
+
+If this feature is enabled, the rp2 driver will create a file under
+/proc/driver/rp2 for each of the rp2 serial ports.  Reading from that
+file will show tx/rx data for that port:
+
+    $ cat /proc/driver/rp2/monitor-ttyRP3
+    tx  54 68 75 20 41 70 72 20 31 33 20 30 39 3a 35 38  Thu Apr 13 09:58
+        3a 32 31 20 43 44 54 20 32 30 31 37 0d 0a        :21 CDT 2017..
+    rx  54 68 75 20 41 70 72 20 31 33 20 30 39 3a 35 38  Thu Apr 13 09:58
+        3a 32 31 20 43 44 54 20 32 30 31 37 0d 0a        :21 CDT 2017..
+
+For the above example data, a loopback plug was attached to ttyRP3 and
+the command "(date; sleep 1) >/dev/ttyRP3" was run from the command
+line.  (If the "sleep 1" is omitted, the data may be truncated
+because the port gets closed before all of it has been transmitted).
+
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+MODULE PARAMETERS
+
+
+The rp2 module accepts two parameters: polling_mode and port_modes.
+
+polling_mode
+------------
+
+  polling_mode=<poll-frequency>
+
+    <poll-frequency> is an integer that controls whether the driver
+    runs in polled or interrupt-driven mode.  A zero poll-frequency
+    value will run the driver in interrupt-driven mode.  If a
+    non-zero value is specified, the board will not generate
+    interrupts, and the driver will poll the board at the specified
+    frequency (in Hz).  The default value for polling_mode is 100:
+    if the parameter is absent, interrupts will not be used and
+    ports will be polled 100 times per second (every 10ms).
+
+    For example, to enable interrupt-driven mode, the following
+    command line could be used:
+
+       # insmod ./rp2.ko polling_mode=0
+
+    To set the polling rate to 1000Hz (1ms polling cycle), the
+    following command line could be used:
+
+       # insmod ./rp2.ko polling_mode=1000
+
+    The exact polling frequency may differ depending on your
+    kernel's timer tick configuration (controlled by the CONFIG_HZ
+    kernel configuration parameter).  CONFIG_HZ (typically 100,
+    250, or 1000) determines the fastest polling frequency allowed.
+
+    If you configure a polling frequency higher than CONFIG_HZ, the
+    rp2 module will poll at CONFIG_HZ.
+
+    If you configure a polling frequency lower than 10Hz, the rp2
+    module will poll at 10Hz.
+
+    The setting of CONFIG_HZ also determines the set of polling
+    frequencies available. The rp2 module must use a polling
+    frequency that is CONFIG_HZ/N where N is an integer.
+
+    In other words, the available polling frequencies that are
+    available with CONFIG_HZ == 1000 are:
+
+       1000/1, 1000/2, 1000/3, 1000/4, 1000/5, 1000/6, ...
+        
+    If you configure a polling frequency that is between two
+    allowed values, the higher of the two values will be chosen.
+
+    For example: if CONFIG_HZ=250, the allowed polling frequencies
+    are
+
+      250, 125, 83, 62, 50, 41, ...
+
+    With CONFIG_HZ=250, the default configuration of 100Hz will
+    result in an actual polling frequency of 125Hz.
+
+    The actual polling frequency is written to the system log as
+    the module starts, and can usually be found using the dmesg
+    command:
+
+     # dmesg | grep rp2
+     [ 2528.597009] rp2: Comtrol RocketPort Infinity/Express driver version 2.05 (Polled mode)
+     [ 2528.597381] rp2 0000:01:09.0: found RocketPort Infinity 8, Octa DB, Selectable with 8 ports
+     [ 2528.709400] rp2 0000:01:09.0: polling at 125Hz
+     [ 2528.709661] rp2 0000:05:00.0: found RocketPort Express 8, Octa DB, Selectable with 8 ports
+     [ 2528.818856] rp2 0000:05:00.0: polling at 125Hz
+
+    The above example is from a system with CONFIG_HZ = 250, and polling_mode=100
+ 
+port_modes
+----------
+
+  port_modes=<mode-string>[,<mode-string>,...]
+
+    The port_modes parameter configures the electrical interface modes
+    (e.g. RS232, RS485, RS422) for the serial ports.  If absent, all
+    ports will be configured as RS232.
+
+    <mode-string> is a string that is used to set the electrical
+    interface modes for a range of serial ports.  The format for
+    <mode-string> is <startport>-<endport>:<modename>.
+
+    Any ports not specified will default to RS232.
+
+
+    For example, to configure ttyRP4-ttyRP7 as RS422 ports:
+
+       port_modes=4-7:rs422
+
+    Multiple comma-separated settings may be used:
+
+       port_modes=4-7:rs422,8-15:rs485,16:rs485-4s
+
+    That will configured ports as follows:
+
+           ttyRP4-ttyRP7   as RS422
+           ttyRP8-ttyRP15  as RS485 (two-wire)
+           ttyRP16         as RS485 (four-wire, slave mode)
+
+    Assuming a total of 32 ports, this will leave ttyRP0-ttyRP3,
+    ttyRP17-ttyRP31 in the default RS232 mode.
+
+    
+    The recognized mode names are:
+
+       rs232
+
+          Standard RS-232 (this is the default).
+
+       rs232h 
+
+           Half-duplex RS-232.  In this mode the RTS line will be
+           asserted any time data is being transmitted and de-asserted
+           whenever no data is being transmitted.  This mode is used
+           for half-duplex modems or line-drivers that expect RTS to
+           be used to control line direction.
+
+       rs422
+
+           Full-duplex, four-wire RS422.
+
+       rs485
+       rs485-2
+
+           Two-wire, half-duplex RS485.
+
+       rs485-4s
+
+           Four-wire, full-duplex RS485 "slave" mode where the
+           transmit line driver is only enabled while data is being
+           transmitted.
+
+       rs485-4m
+
+           Four-wire, full-duplex RS485 "master" mode where the
+           transmit line driver is always enabled.  This is
+           functionally equivalent to rs422 mode.
+
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+LOW LATENCY MODE
+
+
+In interrupt-driven mode, the default rx fifo trigger level is 256
+bytes: when receiving a continuous stream of data, it will be received
+by the application in 256-byte blocks.  However, if the low_latency
+flag is set on the tty_device (e.g. by using the 'setserial' program),
+then the receive fifo trigger level will be set to 1 byte.  In low
+latency mode, every character will be received by the application as
+it arrives.
+
+Be careful when using low-latency mode on multiple ports at high baud
+rates (above 9600) -- the number of interrupts generated may result in
+high CPU usage.
+                    
+The low-latency flag has no effect on the rp2 driver when the driver
+is run in polling mode.  For older Linux kernel versions, it _may_
+reduce latencies in the Linux tty and serial core layers.
+
+The low-latency flag is checked only when a port is being opened.
+Changes to the low-latency flag that are made while any process has
+the port open will not take effect until all processes close the port
+and then it is re-opened.
+
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+INSTALLATION
+
+
+If necessary, refer to the Hardware Installation document for your
+model to install the RocketPort card, external interface chassis (only
+on some models), and serial peripheral cables.
+
+WARNING: On models with an external interface chassis, do not
+         connect/disconnect an external interface chassis while the
+         card is powered.
+
+The document is located on the CD shipped with your product:
+/rport_infinity/userguide/. You can download the latest version from
+ftp://ftp.comtrol.com/html/default.htm
+
+After the board(s) are installed in the PC, perform the following
+procedure.
+
+
+ 1. Unpack the 'tarball' and compile the RocketPort driver:
+
+      $ tar xvzf rocketport_infinity_express-linux-X.XX.tar.gz
+      $ cd rocketport_infinity_express-linux-X.XX
+      $ make
+
+    If you want to re-compile the driver after changing kernel version
+    or configuration, you should do a make clean first:
+
+      $ make clean
+      $ make
+
+
+ 2. The driver can now be test loaded manually using the "insmod"
+    command as root:
+
+       # insmod ./rp2.ko
+
+   And then unloaded
+
+       # rmmod rp2
+
+
+ 3. While logged in as root, install the RocketPort driver:
+
+       # make install
+
+    This will run the install.sh script which will do the following:
+
+       a) Remove any existing rp2.ko kernel module that may be present
+          under /lib/modules/<kernel-version>/kernel/drivers.
+
+       b) Install the rp2.ko kernel module at
+          /lib/modules/<kernel-version>/kenel/drivers/tty/rp2.ko
+
+       c) Update the module depenancy datbase by running the depmod
+          command.
+
+       d) If the system has the 'lsinitrd' command, check to see if
+          the initramfs contains a conflicting driver.  If it does,
+          optionally rebuild the initramfs without it.
+
+       e) Configure the OS so that the rp2 module gets loaded
+          automatically at boot time.  Depending on distribution, that
+          may be any one of the following:
+
+            + Creating /etc/modules-load.d/rp2.conf
+
+            + Adding a line to /etc/modules
+
+            + Adding a line to /etc/conf.d/modules
+
+            + Creating or adding a line to /etc/rc.modules
+
+          Output from the startup script will document which of the
+          above four actions (if any) were taken.  If the install
+          script doesn't recognize the method used by your distrition
+          to configure the loading of kernel modules at startup, it
+          will print a warning stating that it doesn't know how to
+          insure the rp2 module gets loaded at startup.
+
+          For newer kernels that are aware of the rp2 driver and
+          associated PCI board IDs, this warning can be ignored.  If
+          you reboot and the rp2 module gets loaded, then you don't
+          need to do anything about the warning.
+
+       f) Create a default module configuration file in
+          /etc/modprobe.d/rp2.conf.  This file will contain module
+          parmeters reflecting the defaults:
+
+           options rp2 polling_mode=100 port_modes=0-256:rs232
+
+
+ 4. If desired, edit the /etc/modprobe.d/rp2.conf file to configure
+    polling/interrupt mode and port interface modes.  See the MODULE
+    PARAMETERS section for details.
+
+
+ 5. If you would like to manually start the driver without rebooting,
+    issue the following command as root:
+
+      # modprobe rp2
+
+    If you would like to manually stop the driver, issue the following
+    command as root:
+
+      # rmmod rp2
+
+
+ 6. If desired, you can now reboot and verify that the module gets
+    loaded properly on startup.  See the DIAGNOSTICS section below.
+
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+DIAGNOSTICS
+
+
+There are a number of ways to check on the driver's status:
+
+ 1. first make sure that the driver module is loaded:
+
+      # lsmod | grep rp2
+      rp2                 20480  0
+
+    If you see no output, then the driver module is not loaded.  If,
+    after doing a "make install" as described above, the module does
+    not get loaded automatically at system boot:
+
+     a) Verify that the module can be loaded by root using
+
+        # modprobe rp2
+
+     b) If the modprobe command works, then the problem is that your
+        OS distribution is not using one of the persistent module load
+        mechanisms recognized by the rp2 install script.  Consult
+        your distribution's documentation for details on how to
+        configure persistent module loading and perform the required
+        steps to configure your system to load the rp2 module on
+        startup.
+
+    If the module is loaded, make sure it is the expected version by
+    checking your kernel messages:
+
+      # dmesg | grep rp2
+      [...]
+      [    9.503273] rp2: Comtrol RocketPort Infinity/Express driver version 2.15 (Polled mode)
+      [...]
+
+    If you see an older version, you may be running the obsolete rp2
+    driver that is distributed with the Linux kernel.
+
+    If so, try unloading and reloading the driver manually:
+
+      # rmmod rp2; modprobe rp2
+
+    If that loads the correct driver version, but rebooting reverts to
+    the old version, then your intiramfs or initrd file probably
+    contains the obsolete driver.  You can check by using the command
+    below:
+
+      # lsinitrd | grep rp2
+
+    or, on older distros:
+
+      # lsinitramfs /boot/initrd.img-$(uname -r) | grep rp2
+
+    [Exact filename may vary for the lsinitramfs command.]
+
+    If you see an rp2.ko or rp2.ko.xz file, then you need to rebuild
+    your initramfs without the rp2 driver.  For recent distirbutions,
+    this should have been detected by the "make install" step, but you
+    can try to force a rebuild of the initramfs by doing the command
+    below:
+
+      # make install_rebuild_initramfs
+
+    If that fails, or if the lsinitrd/lsinitramfs command still shows
+    an rp2.ko[.xz] file there are two options:
+
+     a) Consult your distribution documentation for instructions on
+        how to remove a kernel driver module from your
+        initramfs/initrd.
+
+     b) Configure your system to execute the commands below at boot
+        time after the normal root filesystem has been mounted.
+
+          rmmod rp2
+          modprobe rp2
+
+        That will replace the old driver from the initramfs/initrd
+        filesystem with the one you installed in the normal root
+        filesystem.  How to configure commands to execute at startup
+        varies depending on the Linux distribution.
+
+
+
+ 2. Check to see if the correct number of device files are present:
+
+      # ls -l /dev/ttyRP*
+      crw-rw---- 1 root dialout 251,  0 Oct 17 12:25 /dev/ttyRP0
+      crw-rw---- 1 root dialout 251,  1 Oct 17 12:25 /dev/ttyRP1
+      crw-rw---- 1 root dialout 251, 10 Oct 17 12:25 /dev/ttyRP10
+      crw-rw---- 1 root dialout 251, 11 Oct 17 12:25 /dev/ttyRP11
+      crw-rw---- 1 root dialout 251, 12 Oct 17 12:25 /dev/ttyRP12
+      crw-rw---- 1 root dialout 251, 13 Oct 17 12:25 /dev/ttyRP13
+      crw-rw---- 1 root dialout 251, 14 Oct 17 12:25 /dev/ttyRP14
+      crw-rw---- 1 root dialout 251, 15 Oct 17 12:25 /dev/ttyRP15
+      crw-rw---- 1 root dialout 251,  2 Oct 17 12:25 /dev/ttyRP2
+      crw-rw---- 1 root dialout 251,  3 Oct 17 12:25 /dev/ttyRP3
+      crw-rw---- 1 root dialout 251,  4 Oct 17 12:25 /dev/ttyRP4
+      crw-rw---- 1 root dialout 251,  5 Oct 17 12:25 /dev/ttyRP5
+      crw-rw---- 1 root dialout 251,  6 Oct 17 12:25 /dev/ttyRP6
+      crw-rw---- 1 root dialout 251,  7 Oct 17 12:25 /dev/ttyRP7
+      crw-rw---- 1 root dialout 251,  8 Oct 17 12:25 /dev/ttyRP8
+      crw-rw---- 1 root dialout 251,  9 Oct 17 12:25 /dev/ttyRP9
+  
+
+ 3. If the rp2 driver is loaded, you should also find a file named
+ 
+      /proc/tty/driver/rp2
+
+    That file contains a list of the serial ports registerd by the
+    driver, the port interface modes, tx/rx data counters, and the
+    current state of the modem control/status lines:
+
+      # cat /proc/tty/driver/rp2
+           
+      serinfo:1.0 driver revision:
+      0: uart:RocketPort Infinity 8, Octa DB, Selectable (rs232) mmio:0xFCFF8000 irq:19 tx:1827 rx:0 RTS|DTR
+      1: uart:RocketPort Infinity 8, Octa DB, Selectable (rs232) mmio:0xFCFF8040 irq:19 tx:1850 rx:0 RTS|DTR
+      2: uart:RocketPort Infinity 8, Octa DB, Selectable (rs232) mmio:0xFCFF8080 irq:19 tx:1982 rx:0 RTS|DTR
+      3: uart:RocketPort Infinity 8, Octa DB, Selectable (rs232) mmio:0xFCFF80C0 irq:19 tx:2005 rx:0 RTS|DTR
+      4: uart:RocketPort Infinity 8, Octa DB, Selectable (rs232) mmio:0xFCFF8100 irq:19 tx:2020 rx:0 RTS|DTR
+      5: uart:RocketPort Infinity 8, Octa DB, Selectable (rs232) mmio:0xFCFF8140 irq:19 tx:2043 rx:0 RTS|DTR
+      6: uart:RocketPort Infinity 8, Octa DB, Selectable (rs232) mmio:0xFCFF8180 irq:19 tx:2066 rx:0 RTS|DTR
+      7: uart:RocketPort Infinity 8, Octa DB, Selectable (rs232) mmio:0xFCFF81C0 irq:19 tx:2082 rx:0 RTS|DTR
+      8: uart:RocketPort Express 8, Octa DB, Selectable (rs232) mmio:0xFEAF8000 irq:18 tx:2105 rx:0 RTS|DTR
+      9: uart:RocketPort Express 8, Octa DB, Selectable (rs232) mmio:0xFEAF8040 irq:18 tx:2120 rx:1613 RTS|CTS|DTR|DSR|CD|RI
+      10: uart:RocketPort Express 8, Octa DB, Selectable (rs232) mmio:0xFEAF8080 irq:18 tx:1865 rx:1358 RTS|CTS|DTR|DSR|CD|RI
+      11: uart:RocketPort Express 8, Octa DB, Selectable (rs232) mmio:0xFEAF80C0 irq:18 tx:1888 rx:1378 RTS|CTS|DTR|DSR|CD|RI
+      12: uart:RocketPort Express 8, Octa DB, Selectable (rs232) mmio:0xFEAF8100 irq:18 tx:1903 rx:1397 RTS|CTS|DTR|DSR|CD|RI
+      13: uart:RocketPort Express 8, Octa DB, Selectable (rs232) mmio:0xFEAF8140 irq:18 tx:1926 rx:1417 RTS|CTS|DTR|DSR|CD|RI
+      14: uart:RocketPort Express 8, Octa DB, Selectable (rs232) mmio:0xFEAF8180 irq:18 tx:1942 rx:1436 RTS|CTS|DTR|DSR|CD|RI
+      15: uart:RocketPort Express 8, Octa DB, Selectable (rs232) mmio:0xFEAF81C0 irq:18 tx:1965 rx:1456 RTS|CTS|DTR|DSR|CD|RI
+
+    If you get a port listing without board descriptions and interface
+    modes (rs232, rs422, rs485), then you are running the basic driver
+    that was included with the kernel rather than this advanced driver
+    from Comtrol.
+
+
+ 4. If the rp2 driver is loaded, you should also find a directory named
+
+       /sys/module/rp2
+
+    That directory contains various details about the loaded module,
+    but the one we are most interested in is the parameters directory
+    which contains two files:
+ 
+       /sys/module/rp2/parameters/polling_mode
+       /sys/module/rp2/parameters/port_modes
+
+    These two files contain the module parameters that were passed to
+    the driver.  If the driver was loaded using modprobe, they should
+    match the contents of the /etc//modprobe.d/rp2.conf file:
+
+       # cat /etc/modprobe.d/rp2.conf
+       options rp2 polling_mode=100 port_modes=0-255:rs232
+
+       # cat /sys/module/rp2/parameters/polling_mode 
+       100
+
+       # cat /sys/module/rp2/parameters/port_modes 
+       0-255:rs232
+
+    If the driver was loaded without any parameters (e.g. using
+    "insmod" instead of "modprobe"), polling_mode will be 100 and
+    port_modes will be empty.
+
+    If the driver is being loaded automatically at startup, but the
+    configuration options found in /etc/modprobe.d/rp2.conf are not
+    being used, consult your OS distribution's documentation to find
+    out how to configure module parameters.
+
+
+ 5. You can usually find startup messages from the driver using the
+    'dmesg' command like this:
+
+       # dmesg | egrep 'rp2|ttyRP'
+       
+       [ 2528.597009] rp2: Comtrol RocketPort Infinity/Express driver version 2.05 (Polled mode)
+       [ 2528.597381] rp2 0000:01:09.0: found RocketPort Infinity 8, Octa DB, Selectable with 8 ports
+       [ 2528.700151] 0000:01:09.0: ttyRP0 at MMIO 0xfcff8000 (irq = 19, base_baud = 2764800) is a RocketPort Infinity 8, Octa DB, Selectable (rs232)
+       [ 2528.700412] 0000:01:09.0: ttyRP1 at MMIO 0xfcff8040 (irq = 19, base_baud = 2764800) is a RocketPort Infinity 8, Octa DB, Selectable (rs232)
+       [ 2528.700561] 0000:01:09.0: ttyRP2 at MMIO 0xfcff8080 (irq = 19, base_baud = 2764800) is a RocketPort Infinity 8, Octa DB, Selectable (rs232)
+       [ 2528.700719] 0000:01:09.0: ttyRP3 at MMIO 0xfcff80c0 (irq = 19, base_baud = 2764800) is a RocketPort Infinity 8, Octa DB, Selectable (rs232)
+       [ 2528.700889] 0000:01:09.0: ttyRP4 at MMIO 0xfcff8100 (irq = 19, base_baud = 2764800) is a RocketPort Infinity 8, Octa DB, Selectable (rs232)
+       [ 2528.705458] 0000:01:09.0: ttyRP5 at MMIO 0xfcff8140 (irq = 19, base_baud = 2764800) is a RocketPort Infinity 8, Octa DB, Selectable (rs232)
+       [ 2528.707769] 0000:01:09.0: ttyRP6 at MMIO 0xfcff8180 (irq = 19, base_baud = 2764800) is a RocketPort Infinity 8, Octa DB, Selectable (rs232)
+       [ 2528.709269] 0000:01:09.0: ttyRP7 at MMIO 0xfcff81c0 (irq = 19, base_baud = 2764800) is a RocketPort Infinity 8, Octa DB, Selectable (rs232)
+       [ 2528.709400] rp2 0000:01:09.0: polling at 125Hz
+       [ 2528.709661] rp2 0000:05:00.0: found RocketPort Express 8, Octa DB, Selectable with 8 ports
+       [ 2528.812124] 0000:05:00.0: ttyRP8 at MMIO 0xfeaf8000 (irq = 18, base_baud = 2764800) is a RocketPort Express 8, Octa DB, Selectable (rs232)
+       [ 2528.812380] 0000:05:00.0: ttyRP9 at MMIO 0xfeaf8040 (irq = 18, base_baud = 2764800) is a RocketPort Express 8, Octa DB, Selectable (rs232)
+       [ 2528.812571] 0000:05:00.0: ttyRP10 at MMIO 0xfeaf8080 (irq = 18, base_baud = 2764800) is a RocketPort Express 8, Octa DB, Selectable (rs232)
+       [ 2528.812734] 0000:05:00.0: ttyRP11 at MMIO 0xfeaf80c0 (irq = 18, base_baud = 2764800) is a RocketPort Express 8, Octa DB, Selectable (rs232)
+       [ 2528.815737] 0000:05:00.0: ttyRP12 at MMIO 0xfeaf8100 (irq = 18, base_baud = 2764800) is a RocketPort Express 8, Octa DB, Selectable (rs232)
+       [ 2528.815987] 0000:05:00.0: ttyRP13 at MMIO 0xfeaf8140 (irq = 18, base_baud = 2764800) is a RocketPort Express 8, Octa DB, Selectable (rs232)
+       [ 2528.816970] 0000:05:00.0: ttyRP14 at MMIO 0xfeaf8180 (irq = 18, base_baud = 2764800) is a RocketPort Express 8, Octa DB, Selectable (rs232)
+       [ 2528.817332] 0000:05:00.0: ttyRP15 at MMIO 0xfeaf81c0 (irq = 18, base_baud = 2764800) is a RocketPort Express 8, Octa DB, Selectable (rs232)
+       [ 2528.818856] rp2 0000:05:00.0: polling at 125Hz
+
+
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+PORT NAMING
+
+
+The RocketPort serial ports installed by this driver are named
+/dev/ttyRPx, where x is the port number starting at zero (ex.
+/dev/ttyRP0, /dev/ttyRP1, ...).
+
+If you have multiple cards installed in the system, the mapping of
+port names to serial ports is written to the system log when the
+module is loaded.  You may also find the mapping between cards and
+ports in the file 
+
+  /proc/tty/drivers/rp2
+
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+CONFIGURATION FILE
+
+The module parameters used by modprobe to configure the driver are
+controlled by the configuration file /etc/modprobe.d/rp2.conf.
+
+The module parameters can be used to
+
+ 1) Control the polling frequency or to run the driver in
+    interrupt-driven mode.
+
+ 2) Configure the electrical interface modes for the ports (rs232,
+    rs485, rs422, etc.)
+
+The configuration file should contain a single line that looks like this:
+
+  options rp2 polling_mode=<poll-mode> port_modes=<mode-spec>
+
+Multiple comma-separated <mode-spec> strings may be supplied for the
+port_modes parameter.
+
+For details and examples of the parameter values, see the "MODULE
+PAREMETERS" section above.
+
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+HIGH PORT SPEEDS
+
+To achieve some of the higher speeds, use either interrupt-driven mode
+or a polling frequency higher than the default 100Hz value.
+
+Recommended polling frequencies for high baud rates:
+
+        Baud Rate              Polling Frequncy
+      ----f------------        ----------------
+      115200 or lower                100  (default)
+      230400 to 460800               200
+          921600                     500
+
+NOTE: Remember after changing /etc/modprobe.d/rp2.conf to restart the
+      driver with the following commands
+
+       # rmmod rp2; modprobe rp2
+
+      [All ports must be closed in order to restart the driver.]
+      
+
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+TESTING SERIAL PORTS
+
+You can use the following instructions to test the serial ports.
+
+-------
+lcom
+-------
+
+Comtrol has available a test utility called "lcom", which is a
+multiport serial I/O test program. You can use lcom in test mode to
+send test data to any serial port.
+
+For assistance using lcom, use the manual page (man 1 lcom)
+that accompanies the program.
+
+-------------
+FILE TRANSFER
+-------------
+
+You can transfer a file using the following default settings:
+9600, 8, n, 1, and no parity.
+
+To send a file you can redirect output to a device; for example:
+        $ cat /etc/motd > /dev/ttyRP0
+
+Sends the contents of the /etc/motd file to the ttyRP0 device
+at 9600 baud, 8, n, 1, and no parity.
+
+
+------------------------------------
+CHANGING SERIAL PORT SETTINGS (stty)
+------------------------------------
+
+Use the following information if you need assistance changing or
+viewing the baud rate settings.
+
+To change the baud rate, use the following example, which
+changes the baud rate to 19200:
+        $ stty 19200 </dev/ttyRP0
+
+To view the current serial port settings for ttyRP0, enter:
+        $ stty -a </dev/ttyRP0
+
+
+--------------------
+TESTING WITH MINICOM
+--------------------
+
+You can also use minicom to test the serial ports.  minicom is shipped with
+most Linux operating systems. A document is available for using minicom on
+the Comtrol CD or can be downloaded from:
+http://www.comtrol.com/support/download.asp?partnumber=2000176
+
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+REPORTING BUGS
+
+
+For technical support, please provide the following information:
+Driver version, kernel release, distribution of Linux, and type of
+board you are using. Error messages, logs, and port configuration
+details are especially helpful.
+
+USA
+    Phone: (763) 957-6000
+      FAX: (763) 957-6001
+
+Web:    http://www.comtrol.com
+FTP:    ftp.comtrol.com

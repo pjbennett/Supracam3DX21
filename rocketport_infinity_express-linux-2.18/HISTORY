@@ -1,0 +1,316 @@
+RocketPort Infinity Linux Driver
+
+Version History
+
+=====================================================================
+2.18 04 Jan 2019
+
+Fix port monitoring code to avoid kernel warning about calling
+lock_bh/unlock_bh from bh context when running in interrupt-driven
+mode.  [0001483]
+
+=====================================================================
+2.17 22 May 2018
+
+Update install script so that removal of old in-tree driver from 
+initramfs works on Suse.  [0001345]
+
+=====================================================================
+2.16 25 April 2018
+
+Update README.
+
+
+=====================================================================
+2.15 25 April 2018
+
+Install script changes to prevent dracut from including this driver in
+the initramfs (and to remove it from initramfs if it's already there).
+[0001345]
+
+
+=====================================================================
+2.14 29 January 2017
+
+Compatiblity fix for kernel 4.15.  [0001291]
+
+
+=====================================================================
+2.13 11 January 2017
+
+
+Fix handling of read(2) calls on /proc/driver/rp2/monitor-ttyRP* made
+with small buffers (less than 2249).  Was causing soft-lockup in the
+read(2) call. [0001265]
+
+
+=====================================================================
+2.12 13 November 2017
+
+Fix compiler error due to unused function disable_rx_fifo_trigger()
+with kernels older than 3.8.0. [0001225]
+
+
+=====================================================================
+2.11 29 August 2017
+
+Ignore the CONFIG_SERIAL_RP2_NR_UARTS configuration setting for
+in-kernel driver.  Always support 256 ports (unless rp2.c is edited by
+hand).  The memory usage difference between 23 ports and 256 is
+negligible.  [0001158]
+
+
+=====================================================================
+2.10 23 May 2017
+
+Fix interrupt-driven mode for 32-port boards. [0001052]
+
+
+=====================================================================
+2.09 11 May 2017
+
+Add optional port-monitoring feature (see README).
+
+=====================================================================
+2.08  11 April 2017
+
+Enable use of UART's xon/xoff flow control support under kernels that
+can take advantage of it (significantly reduces latency in response to
+received xoff).
+
+Fix software flow control problem with tcflow(TCION) handling by
+adding send_xchar() handler.
+
+=====================================================================
+2.07   4 January 2017
+
+Add support for Infinity 8J board.
+
+=====================================================================
+2.06  24 October 2016
+
+Compatibility fix for kernel v4.8.
+
+Switch from obsolete "rc script" to load module and special
+configuration file to using standard mechanisms both for loading and
+configuring module.
+
+New format for port_modes module parameter so that it's human-readable
+and doesn't require a shell script to parse a config file.
+
+Fix code that was supposed to enforce a minimum polling frequency of
+10Hz.
+
+Fix compiler warnings about frame size by adding rx buffer to port
+structure.
+
+Compatibility fixes for kernels 2.6.27-2.6.31
+
+=====================================================================
+2.05  1 July 2014
+
+Fix bug in handling of modem status lines so that an open() call with
+CLOCAL=0 completes properly when CD is/goes active.
+
+Fix mode values for /proc/sys/module/rpw/parameter entries.
+
+
+=====================================================================
+2.04 14 Feb 2014
+
+Compatibility fixes for kernel 3.12 and newer. ISS-006503.
+Compatibility fixes for kernels 2.6.25, 2.6.26
+
+
+=====================================================================
+2.03 21 Jun 2013
+
+Fill up the tx FIFO on every interrupt or poll instead of waiting
+until it's completely empty -- waiting until it's empty can cause gaps
+in tx datastream and throughput below 100%.
+
+
+=====================================================================
+2.02  12 Jun 2013
+
+Add code to implement flush_buffer() API call that flushes tx fifo.
+
+
+=====================================================================
+2.01  12 Mar 2013
+
+Compatiblity fixes for 3.9 kernel.
+
+
+=====================================================================
+2.00   7 Feb 2013
+
+Rewrite as serial_core driver rather than tty driver to reduce
+maintenance effort and provide compatiblity with 3.7 and 3.8 kernels.
+
+
+=====================================================================
+1.20    08/11/2011
+
+Fix Makefile so it is compatible with kernel 3.0.  RPINFLNX-45
+
+Fix kenel oops when modules was unloaded.  RPINFLNX-46
+
+======================================================================
+1.19    05/20/2011
+
+Fix lack of hangup() when CD goes away and clocal is not set.
+RPINFLNX-43
+
+Fix open() so it unblocks when CD appears. RPINFLNX-43
+
+Get rid of non-standard initial port-settings.  They were causing
+broken behavior when used with things like mgetty.  RPINFLNX-43
+
+Remove spurious error message when write() called with count==0.
+
+Remove spurious error message when close() called with use-count > 1.
+
+======================================================================
+1.18    05/14/2011
+
+Added support for Linux kernel version 2.6.39.
+
+======================================================================
+1.17    04/19/2011
+
+Added support for standard setserial utility -- including spd_cust,
+
+baud_base, divisor.  Added support for arbitrary baud rates.
+
+======================================================================
+1.16    03/16/2011
+
+Added support for mark and space parity.
+
+======================================================================
+1.15    01/20/2011
+
+Added support for PCI-express 4J and 8J boards.  Fixed input overruns
+under heavy load.
+
+======================================================================
+1.14	01/18/2010
+
+Corrected Receive FIFO and interrupt settings on port open and close.
+
+======================================================================
+1.13    10/8/2009
+
+Added work-around for bug in Linux tty layer code that breaks 
+tcdrain() on 64-bit systems.
+
+======================================================================
+1.12    9/24/2009
+
+Added support for kernel 2.6.31.
+
+======================================================================
+1.11    7/31/2009
+
+Added RS-485 Full Duplex Master / Slave functionality.
+
+Added support for kernel 2.6.30.
+
+Fixed a bug that may cause "ttyRPx: unknown flag" kernel panic.
+
+======================================================================
+1.10    04/16/2009
+
+Fixes compile problems on 2.6.27 and 2.6.28 kernels.
+
+Adds 4800 baud. Removes unused board types.
+
+Jiras - RPINFLNX-19, 28, 30.
+
+======================================================================
+1.09	09/25/2008
+
+Corrected driver OOPS for kernels 2.6.9 on RHES 4.5
+
+Added support for 2.6.25 and 2.6.26 kernels
+
+======================================================================
+1.08     3/5/2008
+
+Added support for Linux kernel versions from 2.6.4 to 2.6.24
+
+Fixed default interface mode for SMPTE cards
+
+Updated README
+
+======================================================================
+1.07     7/7/2007
+
+Added support for PCIe cards
+
+======================================================================
+1.06     6/29/2007
+
+Changed config file format/parsing
+
+Fix for higher bauds on Ext I/F boards
+
+Fixed baud remapping via setinfinity
+
+Updated README
+
+======================================================================
+1.05     5/22/2007
+
+Fixed RS422 functionality
+
+Updated PCI ID lookup table
+
+Added interface mode persistence
+
+Updated README
+
+======================================================================
+1.04     4/27/2007
+
+Fixed RS485 functionality
+
+======================================================================
+1.03	 4/18/2007
+
+Added 64bit support
+
+Makefile cleanup
+
+======================================================================
+1.02	 3/30/2007
+
+Fixed hang under FC6
+
+Fixed 2nd board initialization
+
+Fixed "module not found" error
+
+Updated revision, copyright strings
+
+Modified README instructions
+
+Removed rocket verbage from install script
+
+Removed extraneous find from Makefile
+
+======================================================================
+1.01	 3/13/2007
+
+Fixes for driver (2.6.13)
+
+Fixed setinfinity bug
+
+Updated driver up to 2.6.18
+
+
+======================================================================
+1.00     7/30/2006	
+
+Initial Release.
