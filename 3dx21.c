@@ -461,6 +461,26 @@ struct MotionCommandStruct {
 struct MotionCommandStruct motionCommand; //commanded Position
 struct MotionCommandStruct motionCommandPrev; //commanded Position
 
+struct BoundaryPoints {
+	float x;
+	float y;
+	float z;
+};
+struct BoundaryPoints BP1;
+struct BoundaryPoints BP2;
+struct BoundaryPoints BP3;
+struct BoundaryPoints BP4;
+
+struct Line {
+	float slope;
+	float b;
+};
+struct Line line12;
+struct Line line23;
+struct Line line34;
+struct Line line41;
+
+
 
 int mdcount;
 
@@ -626,10 +646,6 @@ float LLcm[5];
 float PAcm[5];
 float DFcm[5];
 
-float slope34;
-float b34;
-float slope12;
-float b12;
 
 
 //---------- TEST VARIABLES -----------
@@ -714,14 +730,19 @@ int main (int argc, char *argv[])
 	systemBoundary.floor = ON;
 	systemBoundary.yminSaved = systemBoundary.ymin;
 
-	systemBoundary.p1x = -100;
-	systemBoundary.p1z = 1200;
-	systemBoundary.p2x = -1200;
-	systemBoundary.p2z = -1200;
-	systemBoundary.p3x = 1200;
-	systemBoundary.p3z = -1200;
-	systemBoundary.p4x = 100;
-	systemBoundary.p4z = 1200;
+	BP1.x = -100;
+	BP1.y = 2500;
+	BP1.z = 1200;
+	BP2.x = -1200;
+	BP2.y = 2500;
+	BP2.z = -1200;
+	BP3.x = 1200;
+	BP3.y = 2500;
+	BP3.z = -1200;
+	BP4.x = 100;
+	BP4.y = 2500;
+	BP4.z = 1200;
+
 
 	//END ----------------- Read Config File ---------------
 
@@ -1434,16 +1455,16 @@ void* motorControllerThread (void *arg)
 			}
 		}
 		
-		//calculate current xmax
-		slope34 = (systemBoundary.p4z - systemBoundary.p3z)/(systemBoundary.p4x - systemBoundary.p3x);
-		b34 = systemBoundary.p3z - (slope34 * systemBoundary.p3x);
-		systemBoundary.xmax = (zPositionCurrent - b34)/slope34;
 
 		//calculate current xmin
-		slope12 = (systemBoundary.p2z - systemBoundary.p1z)/(systemBoundary.p2x - systemBoundary.p1x);
-		b12 = systemBoundary.p1z - (slope12 * systemBoundary.p1x);
-		systemBoundary.xmin = (zPositionCurrent - b12)/slope12;
+		line12.slope = (BP2.z - BP1.z)/(BP2.x - BP1.x);
+		line12.b = BP1.z - (line12.slope * BP1.x);
+		systemBoundary.xmin = (zPositionCurrent - line12.b)/line12.slope;
 		
+		//calculate current xmax
+		line34.slope = (BP4.z - BP3.z)/(BP4.x - BP3.x);
+		line34.b = BP3.z - (line34.slope * BP3.x);
+		systemBoundary.xmax = (zPositionCurrent - line34.b)/line34.slope;
 
 		//boundary smoothing
 		if (xjoymoveSmoothed > 0)
@@ -1515,8 +1536,8 @@ void* motorControllerThread (void *arg)
 			}
 		}
 
-		systemBoundary.zmax = systemBoundary.p4z;
-		systemBoundary.zmin = systemBoundary.p3z;
+		systemBoundary.zmax = BP4.z;
+		systemBoundary.zmin = BP3.z;
 
 		
 		//boundary smoothing
@@ -2130,10 +2151,10 @@ gboolean timeoutFunction (gpointer data)
 
 
 	//sprintf(strMisc, "JOYSTICK PAN: %6.3f", pjoymoveCommand);
-	sprintf(strMisc, "slope34: %06.2f", slope34);
+	sprintf(strMisc, "slope34: %06.2f", line34.slope);
 	gtk_label_set_text(GTK_LABEL(g_lbl_joyvalue), strMisc);
 
-	sprintf(strMisc, "b34: %06.2f", b34);
+	sprintf(strMisc, "b34: %06.2f", line34.b);
 	gtk_label_set_text(GTK_LABEL(g_lblDebug2), strMisc);
 
 	//gtk_label_set_text(GTK_LABEL(g_lblJogTest), "Not Jogging");
@@ -3239,11 +3260,11 @@ gboolean on_floorDrawArea_draw (GtkWidget *widget, cairo_t *cr, gpointer data)
 	//	(systemBoundary.zmax - systemBoundary.zmin)/MP_SCALE); //length z
 
 
-	cairo_move_to (cr, systemBoundary.p1x/MP_SCALE, systemBoundary.p1z/MP_SCALE);
-	cairo_line_to (cr, systemBoundary.p2x/MP_SCALE, systemBoundary.p2z/MP_SCALE);
-	cairo_line_to (cr, systemBoundary.p3x/MP_SCALE, systemBoundary.p3z/MP_SCALE);
-	cairo_line_to (cr, systemBoundary.p4x/MP_SCALE, systemBoundary.p4z/MP_SCALE);
-	cairo_line_to (cr, systemBoundary.p1x/MP_SCALE, systemBoundary.p1z/MP_SCALE);
+	cairo_move_to (cr, BP1.x/MP_SCALE, BP1.z/MP_SCALE);
+	cairo_line_to (cr, BP2.x/MP_SCALE, BP2.z/MP_SCALE);
+	cairo_line_to (cr, BP3.x/MP_SCALE, BP3.z/MP_SCALE);
+	cairo_line_to (cr, BP4.x/MP_SCALE, BP4.z/MP_SCALE);
+	cairo_line_to (cr, BP1.x/MP_SCALE, BP1.z/MP_SCALE);
 
 	
 	cairo_stroke(cr);
@@ -3284,10 +3305,10 @@ gboolean on_floorDrawArea_draw (GtkWidget *widget, cairo_t *cr, gpointer data)
 
 	//draw boundary value text
 	cairo_set_source_rgba (cr, RED01);
-	cairo_move_to(cr, systemBoundary.xmin/MP_SCALE-20, -100);
+	cairo_move_to(cr, systemBoundary.xmin/MP_SCALE-20, -150);
 	sprintf(strMisc, "%3.1f m", systemBoundary.xmin/100);
 	cairo_show_text(cr, strMisc);
-	cairo_move_to(cr, systemBoundary.xmax/MP_SCALE-20, -100);
+	cairo_move_to(cr, systemBoundary.xmax/MP_SCALE-20, -150);
 	sprintf(strMisc, "%3.1f m", systemBoundary.xmax/100);
 	cairo_show_text(cr, strMisc);
 
