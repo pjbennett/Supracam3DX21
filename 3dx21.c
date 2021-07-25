@@ -23,7 +23,7 @@
 //05-MAR-2019	v1.07	*** in work ***
 
 
-#define BUILD_NUMBER "1.14.1"
+#define BUILD_NUMBER "21.01.01"
 #define GLADE_FILE_NAME "3dx21.glade"
 #define CCS_FILE_NAME "3dx21.css"
 
@@ -182,6 +182,9 @@ int limit_int(int value, int min, int max);
 //global variables
 GKeyFile *gkfd; //glib ini file parser file descriptor
 
+GtkWindow *g_mainwindow;
+GtkWidget *g_mainfixed;
+
 GtkWidget *g_drawarea;
 GtkWidget *g_drawarea2;
 GtkWidget *g_drawgauge1;
@@ -275,7 +278,6 @@ GtkEntry *g_setBoundaryYmin;
 GtkEntry *g_setBoundaryYmax;
 GtkEntry *g_setBoundaryZmin;
 GtkEntry *g_setBoundaryZmax;
-
 
 GtkButton *g_btnFloor;
 
@@ -622,7 +624,7 @@ float DFcm[5];
 #define WINCH_IGNORE_ALL_BUT_3 	103
 #define WINCH_IGNORE_ALL_BUT_4 	104
 
-int simulationTest = FALSE;
+int simulationTest = TRUE;
 
 //-------------------------------------
 
@@ -814,6 +816,12 @@ int main (int argc, char *argv[])
   window = GTK_WIDGET (gtk_builder_get_object(builder, "window_main"));
   gtk_builder_connect_signals(builder, NULL);
 
+	gtk_widget_set_name(GTK_WIDGET(window), "myWindow_Main");
+
+  g_mainfixed = GTK_WIDGET(gtk_builder_get_object(builder, "MainFixed"));
+
+
+  
   //get pointers to the labels
   g_lblDebug1 = GTK_LABEL(gtk_builder_get_object(builder, "lblDebug1"));
   g_lblDebug2 = GTK_LABEL(gtk_builder_get_object(builder, "lblDebug2"));
@@ -916,6 +924,9 @@ int main (int argc, char *argv[])
   g_lblPosition2 = GTK_LABEL(gtk_builder_get_object(builder, "lblPosition2"));
   g_lblPosition3 = GTK_LABEL(gtk_builder_get_object(builder, "lblPosition3"));
   g_lblPosition4 = GTK_LABEL(gtk_builder_get_object(builder, "lblPosition4"));
+
+  gtk_widget_set_name(GTK_WIDGET(g_btnFloor), "myButton_floor");
+
 
 
   gdk_threads_add_timeout (50, timeoutFunction, NULL); //50ms between updates
@@ -2685,18 +2696,19 @@ gboolean on_joystick_change (GIOChannel *source, GIOCondition condition, gpointe
 			}
 			
 
-			if (js.number == 1) //LH JOY RIGHT/LEFT
+			if (js.number == 0) //LH JOY RIGHT/LEFT
 			{
 				joyValue2 = js.value/32; //convert to appx 0 to 1024
 				pjoymoveCommand = (float)joyValue2/-341.0; //sensitivity limit 0 to 3, reversed
 				joytest1 = (float)joyValue2/-341.0; //sensitivity limit 0 to 3
 			}
 
-			if (js.number == 2) //LH JOY UP/DOWN
+			if (js.number == 1) //LH JOY UP/DOWN
 			{
 				joyValue2 = js.value/32; //convert to appx 0 to 1024
 				//yjoymoveCommand = (float)joyValue2/-341.0; //sensitivity limit 0 to 3, reversed
-				yjoymoveCommand = ((float)joyValue2/51.2); //sensitivity limit 0 to 20, not reversed
+				//yjoymoveCommand = ((float)joyValue2/51.2); //sensitivity limit 0 to 20, not reversed
+				yjoymoveCommand = ((float)joyValue2/-51.2); //sensitivity limit 0 to 20, reversed
 				
 				//add deadband
 				if ((yjoymoveCommand < 0.2) && (yjoymoveCommand > -0.2))
@@ -2722,8 +2734,8 @@ gboolean on_joystick_change (GIOChannel *source, GIOCondition condition, gpointe
 			{
 				joyValue2 = js.value/32; //convert to appx 0 to 1024
 				//zjoymoveCommand = (float)joyValue2/102.4; //sensitivity limit 0 to 10 
-				//zjoymoveCommand = (float)joyValue2/25.6; //sensitivity limit 0 to 40
-				zjoymoveCommand = (float)joyValue2/-25.6; //sensitivity limit 0 to 40, reversed
+				zjoymoveCommand = (float)joyValue2/25.6; //sensitivity limit 0 to 40
+				//zjoymoveCommand = (float)joyValue2/-25.6; //sensitivity limit 0 to 40, reversed
 
 				//add deadband
 				if ((zjoymoveCommand < 0.2) && (zjoymoveCommand > -0.2))

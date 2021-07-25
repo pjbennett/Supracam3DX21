@@ -1138,7 +1138,7 @@
                     <property name="label" translatable="yes">serial data</property>
                     <property name="xalign">0</property>
                     <attributes>
-                      <attribute name="font-desc" value="Ubuntu Mono 10"/>
+                      <attribute name="font-desc" value="C059 14"/>
                       <attribute name="foreground" value="#c4c4a0a00000"/>
                     </attributes>
                     <style>
@@ -1160,7 +1160,7 @@
                     <property name="label" translatable="yes">serial data</property>
                     <property name="xalign">0</property>
                     <attributes>
-                      <attribute name="font-desc" value="Ubuntu Mono 14"/>
+                      <attribute name="font-desc" value="Courier 10 Pitch 14"/>
                       <attribute name="foreground" value="#7373d2d21616"/>
                     </attributes>
                   </object>
@@ -1178,7 +1178,7 @@
                     <property name="label" translatable="yes">serial data</property>
                     <property name="xalign">0</property>
                     <attributes>
-                      <attribute name="font-desc" value="Ubuntu Mono 14"/>
+                      <attribute name="font-desc" value="Courier 10 Pitch 14"/>
                       <attribute name="foreground" value="#7373d2d21616"/>
                     </attributes>
                   </object>
@@ -1196,7 +1196,7 @@
                     <property name="label" translatable="yes">serial data</property>
                     <property name="xalign">0</property>
                     <attributes>
-                      <attribute name="font-desc" value="Ubuntu Mono 14"/>
+                      <attribute name="font-desc" value="Courier 10 Pitch 14"/>
                       <attribute name="foreground" value="#7373d2d21616"/>
                     </attributes>
                   </object>
@@ -1215,7 +1215,7 @@
                     <property name="label" translatable="yes">serial data</property>
                     <property name="xalign">0</property>
                     <attributes>
-                      <attribute name="font-desc" value="Ubuntu Mono 14"/>
+                      <attribute name="font-desc" value="Courier 10 Pitch 14"/>
                       <attribute name="foreground" value="#7373d2d21616"/>
                     </attributes>
                   </object>

@@ -1,27 +1,38 @@
 
-GtkWindow {
+window {
+	background-color: #000000;
+
+}
+
+notebook {
 	background-color: #000000;
 }
 
-GtkLabel {
+fixed {
+	background-color: #000000;
+}
+
+bob {
     font-family: MS33558;
     font-size: 12px;
     color:#00B9F0;
 }
 
-GtkTreeView {
-	background-color: #000000;
+
+
+TreeView {
+    background-color: #000000;
     font-size: 9px;
     font-family: Arial;
     color:#00B9F0;
 }
 
-GtkTreeView row:selected {
+TreeView row:selected {
     color:#EDD400;
 }
 
 
-GtkTextView {
+TextView {
 	background-color: #000000;
     font-size: 9px;
     font-family: Arial;
@@ -34,4 +45,41 @@ GtkTextView {
     color: #FFAE00;
 }
 
+button {
+    background-image: none;
+    background-color: #000000;
+    color: #00B9F0;
+    border-radius: 5px;
+    border-color: #00B9F0;
+    border-width: 2px;
+}
+
+.button3dx {
+    background-image: none;
+    background-color: #000000;
+    color: #00B9F0;
+    border-radius: 5px;
+    border-color: #00B9F0;
+    border-width: 2px;
+}
+
+#myButton_floor{
+    background-image: none;
+    background-color: #000000;
+    color: #00B9F0;
+    border-radius: 5px;
+    border-color: #00B9F0;
+    border-width: 2px;
+}
+
+.button3dx:hover{
+    color: #ff0000;
+    border-color: #ff0000;
+ }
+ 
+ .commslabel {
+    font-family: UbuntuMono;
+    font-size: 12px;
+    color:#00B9F0;
+}
 
