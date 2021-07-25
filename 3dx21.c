@@ -292,6 +292,8 @@ GtkLabel *g_lblPosition3;
 GtkLabel *g_lblPosition4;
 
 
+
+
 char commPortWinch1[80];
 char commPortWinch2[80];
 char commPortWinch3[80];
@@ -347,6 +349,15 @@ struct Boundary {
 	float zmax;
 	int floor;
 	float yminSaved;
+	//new boundary points (based on pulley points)
+	float p1x;
+	float p1z;
+	float p2x;
+	float p2z;
+	float p3x;
+	float p3z;
+	float p4x;
+	float p4z;
 	};
 struct Boundary systemBoundary;
 
@@ -698,6 +709,16 @@ int main (int argc, char *argv[])
 
 	systemBoundary.floor = ON;
 	systemBoundary.yminSaved = systemBoundary.ymin;
+
+	systemBoundary.p1x = -2000;
+	systemBoundary.p1z = 5000;
+	systemBoundary.p2x = -4000;
+	systemBoundary.p2z = -5000;
+	systemBoundary.p3x = 4000;
+	systemBoundary.p3z = -5000;
+	systemBoundary.p4x = 2000;
+	systemBoundary.p4z = 5000;
+
 	//END ----------------- Read Config File ---------------
 
 
@@ -3192,11 +3213,20 @@ gboolean on_floorDrawArea_draw (GtkWidget *widget, cairo_t *cr, gpointer data)
 	cairo_set_line_width (cr, 2.0);
 	cairo_set_source_rgba (cr, RED01);
 	cairo_set_dash(cr, dash1, 2, 0);
-	cairo_rectangle (cr,
-		systemBoundary.xmin/MP_SCALE, //corner x
-		systemBoundary.zmin/MP_SCALE, //corner z
-		(systemBoundary.xmax - systemBoundary.xmin)/MP_SCALE,  //length x
-		(systemBoundary.zmax - systemBoundary.zmin)/MP_SCALE); //length z
+	//cairo_rectangle (cr,
+	//	systemBoundary.xmin/MP_SCALE, //corner x
+	//	systemBoundary.zmin/MP_SCALE, //corner z
+	//	(systemBoundary.xmax - systemBoundary.xmin)/MP_SCALE,  //length x
+	//	(systemBoundary.zmax - systemBoundary.zmin)/MP_SCALE); //length z
+
+
+	cairo_move_to (cr, systemBoundary.p1x/MP_SCALE, systemBoundary.p1z/MP_SCALE);
+	cairo_line_to (cr, systemBoundary.p2x/MP_SCALE, systemBoundary.p2z/MP_SCALE);
+	cairo_line_to (cr, systemBoundary.p3x/MP_SCALE, systemBoundary.p3z/MP_SCALE);
+	cairo_line_to (cr, systemBoundary.p4x/MP_SCALE, systemBoundary.p4z/MP_SCALE);
+	cairo_line_to (cr, systemBoundary.p1x/MP_SCALE, systemBoundary.p1z/MP_SCALE);
+
+	
 	cairo_stroke(cr);
 	cairo_set_dash(cr, dash1, OFF, 0);
 
