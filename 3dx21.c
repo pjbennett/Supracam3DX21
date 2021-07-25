@@ -116,7 +116,7 @@
 #define WINCH_TELEMETRY_CHART_X 112
 #define WINCH_TELEMETRY_CHART_Y 155
 
-#define MP_SCALE 40
+#define MP_SCALE 10
 
 #define PTR_Y_OFFSET 50.0 //in cm
 #define FLASH_TOGGLE_RATE 10
@@ -626,6 +626,10 @@ float LLcm[5];
 float PAcm[5];
 float DFcm[5];
 
+float slope34;
+float b34;
+float slope12;
+float b12;
 
 
 //---------- TEST VARIABLES -----------
@@ -710,14 +714,14 @@ int main (int argc, char *argv[])
 	systemBoundary.floor = ON;
 	systemBoundary.yminSaved = systemBoundary.ymin;
 
-	systemBoundary.p1x = -2000;
-	systemBoundary.p1z = 5000;
-	systemBoundary.p2x = -4000;
-	systemBoundary.p2z = -5000;
-	systemBoundary.p3x = 4000;
-	systemBoundary.p3z = -5000;
-	systemBoundary.p4x = 2000;
-	systemBoundary.p4z = 5000;
+	systemBoundary.p1x = -100;
+	systemBoundary.p1z = 1200;
+	systemBoundary.p2x = -1200;
+	systemBoundary.p2z = -1200;
+	systemBoundary.p3x = 1200;
+	systemBoundary.p3z = -1200;
+	systemBoundary.p4x = 100;
+	systemBoundary.p4z = 1200;
 
 	//END ----------------- Read Config File ---------------
 
@@ -1404,7 +1408,7 @@ void* motorControllerThread (void *arg)
 
 		}
 
-
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 		//========== manual mode ===================
 
 		if (systemMode == MODE_MANUAL)
@@ -1430,6 +1434,17 @@ void* motorControllerThread (void *arg)
 			}
 		}
 		
+		//calculate current xmax
+		slope34 = (systemBoundary.p4z - systemBoundary.p3z)/(systemBoundary.p4x - systemBoundary.p3x);
+		b34 = systemBoundary.p3z - (slope34 * systemBoundary.p3x);
+		systemBoundary.xmax = (zPositionCurrent - b34)/slope34;
+
+		//calculate current xmin
+		slope12 = (systemBoundary.p2z - systemBoundary.p1z)/(systemBoundary.p2x - systemBoundary.p1x);
+		b12 = systemBoundary.p1z - (slope12 * systemBoundary.p1x);
+		systemBoundary.xmin = (zPositionCurrent - b12)/slope12;
+		
+
 		//boundary smoothing
 		if (xjoymoveSmoothed > 0)
 		{		
@@ -1499,6 +1514,9 @@ void* motorControllerThread (void *arg)
 				zjoymoveSmoothed = 0;
 			}
 		}
+
+		systemBoundary.zmax = systemBoundary.p4z;
+		systemBoundary.zmin = systemBoundary.p3z;
 
 		
 		//boundary smoothing
@@ -1668,6 +1686,7 @@ void* motorControllerThread (void *arg)
 				//motionCommand.yPosition = motionData[mdcount].yPosition;
 				//motionCommand.zPosition = motionData[mdcount].zPosition;
 			}
+
 
 
 			if (playbackMode == PLAYBACK_MODE_DECEL)
@@ -2111,10 +2130,10 @@ gboolean timeoutFunction (gpointer data)
 
 
 	//sprintf(strMisc, "JOYSTICK PAN: %6.3f", pjoymoveCommand);
-	sprintf(strMisc, "MANUAL PAN: %06.2f", panManualMultiTurnValue);
+	sprintf(strMisc, "slope34: %06.2f", slope34);
 	gtk_label_set_text(GTK_LABEL(g_lbl_joyvalue), strMisc);
 
-	sprintf(strMisc, "MOTION PAN: %06.2f", motionData[mdcount].panMultiTurn);
+	sprintf(strMisc, "b34: %06.2f", b34);
 	gtk_label_set_text(GTK_LABEL(g_lblDebug2), strMisc);
 
 	//gtk_label_set_text(GTK_LABEL(g_lblJogTest), "Not Jogging");
