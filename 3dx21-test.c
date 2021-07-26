@@ -22,11 +22,6 @@
 //04-MAR-2019	v1.06	Fixed thread time display, added jog functions, new glade, new title bar
 //05-MAR-2019	v1.07	*** in work ***
 
-//03-MAR-2020 --- WSEC 2020 ---
-//05-MAR-2020 v1.17.1 Changed joystick sensitivites
-//05-MAR-2020 v1.18.1 Added time of day display, Y boundary display
-//06-MAR-2020 v1.20.1 changed floor on/off button to set floor at 2m
-
 
 #define BUILD_NUMBER "21.01.01"
 #define GLADE_FILE_NAME "3dx21.glade"
@@ -121,7 +116,7 @@
 #define WINCH_TELEMETRY_CHART_X 112
 #define WINCH_TELEMETRY_CHART_Y 155
 
-#define MP_SCALE 40
+#define MP_SCALE 10
 
 #define PTR_Y_OFFSET 50.0 //in cm
 #define FLASH_TOGGLE_RATE 10
@@ -129,9 +124,8 @@
 #define OK 0
 #define ERROR 1
 
-//#define JOYSTICK_SMOOTHING 0.4
-//#define JOYSTICK_SMOOTHING 0.3
-#define JOYSTICK_SMOOTHING 0.35
+//#define JOYSTICK_SMOOTHING 0.1
+#define JOYSTICK_SMOOTHING 0.4
 #define BOUNDARY_SMOOTHING 300.0
 #define BOUNDARY_JOYRESET 20.0
 
@@ -187,6 +181,9 @@ int limit_int(int value, int min, int max);
 
 //global variables
 GKeyFile *gkfd; //glib ini file parser file descriptor
+
+GtkWindow *g_mainwindow;
+GtkWidget *g_mainfixed;
 
 GtkWidget *g_drawarea;
 GtkWidget *g_drawarea2;
@@ -282,7 +279,6 @@ GtkEntry *g_setBoundaryYmax;
 GtkEntry *g_setBoundaryZmin;
 GtkEntry *g_setBoundaryZmax;
 
-
 GtkButton *g_btnFloor;
 
 GtkComboBox *g_cbPlaybackSpeed;
@@ -295,7 +291,8 @@ GtkLabel *g_lblPosition2;
 GtkLabel *g_lblPosition3;
 GtkLabel *g_lblPosition4;
 
-GtkLabel *g_lblTime;
+
+
 
 char commPortWinch1[80];
 char commPortWinch2[80];
@@ -352,6 +349,15 @@ struct Boundary {
 	float zmax;
 	int floor;
 	float yminSaved;
+	//new boundary points (based on pulley points)
+	float p1x;
+	float p1z;
+	float p2x;
+	float p2z;
+	float p3x;
+	float p3z;
+	float p4x;
+	float p4z;
 	};
 struct Boundary systemBoundary;
 
@@ -455,6 +461,26 @@ struct MotionCommandStruct {
 struct MotionCommandStruct motionCommand; //commanded Position
 struct MotionCommandStruct motionCommandPrev; //commanded Position
 
+struct BoundaryPoints {
+	float x;
+	float y;
+	float z;
+};
+struct BoundaryPoints BP1;
+struct BoundaryPoints BP2;
+struct BoundaryPoints BP3;
+struct BoundaryPoints BP4;
+
+struct Line {
+	float slope;
+	float b;
+};
+struct Line line12;
+struct Line line23;
+struct Line line34;
+struct Line line41;
+
+
 
 int mdcount;
 
@@ -531,17 +557,14 @@ int flashToggleCount;
 int serialPortFD[4];
 
 float xjoymoveCommand;
-float xjoymoveRaw;
 float xjoymoveSmoothed;
 float xPositionCurrent;
 float xPositionPrev;
 float yjoymoveCommand;
-float yjoymoveRaw;
 float yjoymoveSmoothed;
 float yPositionCurrent;
 float yPositionPrev;
 float zjoymoveCommand;
-float zjoymoveRaw;
 float zjoymoveSmoothed;
 float zPositionCurrent;
 float zPositionPrev;
@@ -623,7 +646,6 @@ float LLcm[5];
 float PAcm[5];
 float DFcm[5];
 
-int joystickStatus = 0;
 
 
 //---------- TEST VARIABLES -----------
@@ -633,7 +655,7 @@ int joystickStatus = 0;
 #define WINCH_IGNORE_ALL_BUT_3 	103
 #define WINCH_IGNORE_ALL_BUT_4 	104
 
-int simulationTest = FALSE;
+int simulationTest = TRUE;
 
 //-------------------------------------
 
@@ -707,6 +729,21 @@ int main (int argc, char *argv[])
 
 	systemBoundary.floor = ON;
 	systemBoundary.yminSaved = systemBoundary.ymin;
+
+	BP1.x = -100;
+	BP1.y = 2500;
+	BP1.z = 1200;
+	BP2.x = -1200;
+	BP2.y = 2500;
+	BP2.z = -1200;
+	BP3.x = 1200;
+	BP3.y = 2500;
+	BP3.z = -1200;
+	BP4.x = 100;
+	BP4.y = 2500;
+	BP4.z = 1200;
+
+
 	//END ----------------- Read Config File ---------------
 
 
@@ -736,12 +773,10 @@ int main (int argc, char *argv[])
 	if ((joy_fd = open(JOY_DEV, (O_RDWR | O_NOCTTY | O_NDELAY))) == -1)
 	{
 		printf("\nCan't open joystick\n");
-		joystickStatus = -1;
 		//return -1;
 	}
 	else
 	{
-		joystickStatus = 1;
 	ioctl( joy_fd, JSIOCGAXES, &num_of_axis );
 	ioctl( joy_fd, JSIOCGBUTTONS, &num_of_buttons );
 	ioctl( joy_fd, JSIOCGNAME(80), &name_of_joystick );
@@ -827,6 +862,12 @@ int main (int argc, char *argv[])
   window = GTK_WIDGET (gtk_builder_get_object(builder, "window_main"));
   gtk_builder_connect_signals(builder, NULL);
 
+	gtk_widget_set_name(GTK_WIDGET(window), "myWindow_Main");
+
+  g_mainfixed = GTK_WIDGET(gtk_builder_get_object(builder, "MainFixed"));
+
+
+  
   //get pointers to the labels
   g_lblDebug1 = GTK_LABEL(gtk_builder_get_object(builder, "lblDebug1"));
   g_lblDebug2 = GTK_LABEL(gtk_builder_get_object(builder, "lblDebug2"));
@@ -892,7 +933,6 @@ int main (int argc, char *argv[])
   g_lblModeStatus2 = GTK_LABEL(gtk_builder_get_object(builder, "lblModeStatus2"));
   g_lblPlayBackStatus = GTK_LABEL(gtk_builder_get_object(builder, "lblPlayBackStatus"));
 
-  g_lblTime = GTK_LABEL(gtk_builder_get_object(builder, "lblTime"));
 
   g_dlgBoundary = GTK_WIDGET(gtk_builder_get_object(builder, "dlgBoundary"));
   g_setBoundaryXmin = GTK_ENTRY(gtk_builder_get_object(builder, "entBoundaryXmin"));
@@ -930,6 +970,9 @@ int main (int argc, char *argv[])
   g_lblPosition2 = GTK_LABEL(gtk_builder_get_object(builder, "lblPosition2"));
   g_lblPosition3 = GTK_LABEL(gtk_builder_get_object(builder, "lblPosition3"));
   g_lblPosition4 = GTK_LABEL(gtk_builder_get_object(builder, "lblPosition4"));
+
+  gtk_widget_set_name(GTK_WIDGET(g_btnFloor), "myButton_floor");
+
 
 
   gdk_threads_add_timeout (50, timeoutFunction, NULL); //50ms between updates
@@ -1026,7 +1069,7 @@ void* motorControllerThread (void *arg)
 			buffNumBytes[i] = 0;
 			ioctl(serialPortFD[i], FIONREAD, &buffNumBytes[i]);
 			//printf("port %d bytes available: %d\n", i, buffNumBytes[i]);
-			//printf("Number of bytes = %d\n", buffNumBytes[i]);
+			//printf("Number of bytes = %d\n", bytes);
 			bytesRead = 0;
 
 			//check bytes available
@@ -1049,19 +1092,7 @@ void* motorControllerThread (void *arg)
 			{
 				commErrorCount[i]++;
 				commErrorCountTotal[i]++;
-				sprintf(strReceivedDisplayBuffer[i], "Winch %d: Error - %d < 35 bytes (rp2 Driver)", i+1, buffNumBytes[i]);
-
-				//bytesRead = read(serialPortFD[i], readBuffer, buffNumBytes[i]); //35
-				//readBuffer[bytesRead - 1] = 0; //set string terminator, delete \n at end of string
-				//sprintf(strReceivedDisplayBuffer[i], "Error %d: %s", i+1, readBuffer);
-
-			}
-
-			else if (buffNumBytes[i] == 0)
-			{
-				commErrorCount[i]++;
-				commErrorCountTotal[i]++;
-				sprintf(strReceivedDisplayBuffer[i], "Winch %d: Error - no data rcvd", i+1);
+				sprintf(strReceivedDisplayBuffer[i], "Winch %d: Error - less than 35 bytes rcvd", i+1);
 			}
 
 			//check read bytes (not just available bytes)
@@ -1072,7 +1103,7 @@ void* motorControllerThread (void *arg)
 			//	sprintf(strReceivedDisplayBuffer[i], "Winch %d: Comm Error - no data", i+1);
 			//}
 
-			if (commErrorCount[i] > 16)
+			if (commErrorCount[i] > 8)
 			{
 				winchStatus[i].Comms = ERROR;
 				commErrorCount[i] = 100;
@@ -1085,9 +1116,8 @@ void* motorControllerThread (void *arg)
 				//printf("read %d: %s", bytesRead, readBuffer);
 				//sprintf(strReceivedBuffer, "%s", readBuffer);
 				
-				//sprintf(strReceivedDisplayBuffer[i], "Winch %d: %x,%i,%i,%i", i+1, writeBuffer[1],readBuffer[2],readBuffer[3],readBuffer[4]);
 				sprintf(strReceivedDisplayBuffer[i], "Winch %d: %s", i+1, readBuffer);
-
+				
 				//=== calculate message checksum ===
 				//read packet sent checksum
 				strDataLRC[0] = readBuffer[31];
@@ -1399,7 +1429,7 @@ void* motorControllerThread (void *arg)
 
 		}
 
-
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 		//========== manual mode ===================
 
 		if (systemMode == MODE_MANUAL)
@@ -1425,6 +1455,17 @@ void* motorControllerThread (void *arg)
 			}
 		}
 		
+
+		//calculate current xmin
+		line12.slope = (BP2.z - BP1.z)/(BP2.x - BP1.x);
+		line12.b = BP1.z - (line12.slope * BP1.x);
+		systemBoundary.xmin = (zPositionCurrent - line12.b)/line12.slope;
+		
+		//calculate current xmax
+		line34.slope = (BP4.z - BP3.z)/(BP4.x - BP3.x);
+		line34.b = BP3.z - (line34.slope * BP3.x);
+		systemBoundary.xmax = (zPositionCurrent - line34.b)/line34.slope;
+
 		//boundary smoothing
 		if (xjoymoveSmoothed > 0)
 		{		
@@ -1494,6 +1535,9 @@ void* motorControllerThread (void *arg)
 				zjoymoveSmoothed = 0;
 			}
 		}
+
+		systemBoundary.zmax = BP4.z;
+		systemBoundary.zmin = BP3.z;
 
 		
 		//boundary smoothing
@@ -1569,7 +1613,7 @@ void* motorControllerThread (void *arg)
 		//check for floor on/off
 		if (systemBoundary.floor == OFF)
 		{
-			systemBoundary.ymin = 200.0;
+			systemBoundary.ymin = 0.0;
 		}
 		else
 		{
@@ -1663,6 +1707,7 @@ void* motorControllerThread (void *arg)
 				//motionCommand.yPosition = motionData[mdcount].yPosition;
 				//motionCommand.zPosition = motionData[mdcount].zPosition;
 			}
+
 
 
 			if (playbackMode == PLAYBACK_MODE_DECEL)
@@ -2091,15 +2136,13 @@ gboolean timeoutFunction (gpointer data)
 	sprintf(strMisc, "LL:%6.2fcm  PA:%6.2fcm  DF:%6.3fcm", LLcm[3], PAcm[3], DFcm[3]);
 	gtk_label_set_text(GTK_LABEL(g_lblPosition4), strMisc);
 
-	
-
 
 	//sprintf(strMisc, "POS DIFF: %06.2f  %06.2f  %06.2f  %06.2f", maxDiffLLC[0], maxDiffLLC[1], maxDiffLLC[2], maxDiffLLC[3]);
 	sprintf(strMisc, "ENCDR: %06.4f  %06.4f  %06.4f  %06.4f", winchData[0].PositionActual, winchData[1].PositionActual, winchData[2].PositionActual, winchData[3].PositionActual);
 	gtk_label_set_text(GTK_LABEL(g_lblDebug4), strMisc);
 
 	//sprintf(strMisc, "XCMD: %06.2f  XPOS: %06.2f  DIFF: %06.2f", motionCommand.xPosition, motionData[mdcount].xPosition, motionCommand.xPosition - motionData[mdcount].xPosition);
-	sprintf(strMisc, "XMC: %06.2f  YMC: %06.2f  ZMC: %06.2f", xjoymoveRaw, yjoymoveRaw, zjoymoveRaw);	
+	sprintf(strMisc, "XMC: %06.2f  YMC: %06.2f  ZMC: %06.2f", xjoymoveCommand, yjoymoveCommand, zjoymoveCommand);	
 	gtk_label_set_text(GTK_LABEL(g_lblDebug3), strMisc);
 
 	//sprintf(strMisc, "%06.2f  %06.2f  %06.2f  %06.2f", cumultiveDiffLLC[0], cumultiveDiffLLC[1], cumultiveDiffLLC[2], cumultiveDiffLLC[3]);
@@ -2108,10 +2151,10 @@ gboolean timeoutFunction (gpointer data)
 
 
 	//sprintf(strMisc, "JOYSTICK PAN: %6.3f", pjoymoveCommand);
-	sprintf(strMisc, "MANUAL PAN: %06.2f", panManualMultiTurnValue);
+	sprintf(strMisc, "slope34: %06.2f", line34.slope);
 	gtk_label_set_text(GTK_LABEL(g_lbl_joyvalue), strMisc);
 
-	sprintf(strMisc, "MOTION PAN: %06.2f", motionData[mdcount].panMultiTurn);
+	sprintf(strMisc, "b34: %06.2f", line34.b);
 	gtk_label_set_text(GTK_LABEL(g_lblDebug2), strMisc);
 
 	//gtk_label_set_text(GTK_LABEL(g_lblJogTest), "Not Jogging");
@@ -2136,37 +2179,14 @@ gboolean timeoutFunction (gpointer data)
 
 	if (systemBoundary.floor == OFF)
 	{
-		gtk_button_set_label(g_btnFloor, "FLOOR 2m");
+		gtk_button_set_label(g_btnFloor, "FLOOR OFF");
 	}
 	else
 	{
 		gtk_button_set_label(g_btnFloor, "FLOOR ON");
 	}
 
-	//display current time
-	time_t rawtime;
-	struct tm * timeinfo;
-	time (&rawtime);
-	timeinfo = localtime(&rawtime);
-	int ampm = 0;
-	int hour12 = timeinfo->tm_hour;
-	if (timeinfo->tm_hour > 12)
-	{
-		hour12 = timeinfo->tm_hour - 12;
-	}
-	if (timeinfo->tm_hour >= 12)
-	{
-		ampm = 1;
-	}
-	if (ampm == 1)
-	{
-		sprintf(strMisc, "%02d:%02d:%02d PM", hour12, timeinfo->tm_min, timeinfo->tm_sec);
-	}
-	else
-	{
-		sprintf(strMisc, "%02d:%02d:%02d AM", hour12, timeinfo->tm_min, timeinfo->tm_sec);
-	}
-	gtk_label_set_text(GTK_LABEL(g_lblTime), strMisc);
+
 
 	if (systemMode == MODE_LOCKED)
 	{
@@ -2200,12 +2220,6 @@ gboolean timeoutFunction (gpointer data)
 		{
 			gtk_label_set_text(GTK_LABEL(g_lblModeStatus2), "MOVING TO START");
 		}
-	}
-
-	//display joystick box not found (as needed)
-	if (joystickStatus == -1)
-	{
-		gtk_label_set_text(GTK_LABEL(g_lblModeStatus1), "NO JOYSTICK BOX!");
 	}
 	
 	if ((playbackMode == PLAYBACK_MODE_STOP) || (playbackMode == PLAYBACK_MODE_GOTOSTART))
@@ -2743,68 +2757,52 @@ gboolean on_joystick_change (GIOChannel *source, GIOCondition condition, gpointe
 			}
 			
 
-			//if (js.number == 1) //LH JOY RIGHT/LEFT
-			//{
-			//	joyValue2 = js.value/32; //convert to appx 0 to 1024
-			//	pjoymoveCommand = (float)joyValue2/-341.0; //sensitivity limit 0 to 3, reversed
-			//	joytest1 = (float)joyValue2/-341.0; //sensitivity limit 0 to 3
-			//}
+			if (js.number == 0) //LH JOY RIGHT/LEFT
+			{
+				joyValue2 = js.value/32; //convert to appx 0 to 1024
+				pjoymoveCommand = (float)joyValue2/-341.0; //sensitivity limit 0 to 3, reversed
+				joytest1 = (float)joyValue2/-341.0; //sensitivity limit 0 to 3
+			}
 
-			if (js.number == 3) //LH JOY UP/DOWN
+			if (js.number == 1) //LH JOY UP/DOWN
 			{
 				joyValue2 = js.value/32; //convert to appx 0 to 1024
 				//yjoymoveCommand = (float)joyValue2/-341.0; //sensitivity limit 0 to 3, reversed
 				//yjoymoveCommand = ((float)joyValue2/51.2); //sensitivity limit 0 to 20, not reversed
-				//yjoymoveCommand = ((float)joyValue2/34.1); //sensitivity limit 0 to 30, not reversed
-				yjoymoveCommand = ((float)joyValue2/102.4); //sensitivity limit 0 to 10, not reversed
+				yjoymoveCommand = ((float)joyValue2/-51.2); //sensitivity limit 0 to 20, reversed
 				
 				//add deadband
 				if ((yjoymoveCommand < 0.2) && (yjoymoveCommand > -0.2))
 				{
 					yjoymoveCommand = 0;
 				}
-				yjoymoveRaw = yjoymoveCommand;
 			}
 
-			if (js.number == 0) //RH JOY RIGHT/LEFT
+			if (js.number == 3) //RH JOY RIGHT/LEFT
 			{
 				joyValue2 = js.value/32; //convert to appx 0 to 1024
-				//xjoymoveCommand = (float)joyValue2/102.4; //sensitivity limit 0 to 10, not reversed
 				//xjoymoveCommand = (float)joyValue2/-102.4; //sensitivity limit 0 to 10, reversed
 				//xjoymoveCommand = ((float)joyValue2/-25.6); //sensitivity limit 0 to 40, reversed
-				//xjoymoveCommand = ((float)joyValue2/25.6); //sensitivity limit 0 to 40, not reversed
-				//xjoymoveCommand = ((float)joyValue2/12.8); //sensitivity limit 0 to 80, not reversed
-				//xjoymoveCommand = ((float)joyValue2/38.4); //sensitivity limit 0 to 30, not reversed
-				xjoymoveCommand = ((float)joyValue2/51.2); //sensitivity limit 0 to 20, not reversed
-				//xjoymoveCommand = ((float)joyValue2/30.0); //sensitivity limit 0 to 30ish, not reversed
-
-				//additional limit to joystick input
-				if (xjoymoveCommand > 30)
-					xjoymoveCommand = 30;
-					
+				xjoymoveCommand = ((float)joyValue2/25.6); //sensitivity limit 0 to 40, not reversed
 
 				//add deadband
 				if ((xjoymoveCommand < 0.2) && (xjoymoveCommand > -0.2))
 				{
 					xjoymoveCommand = 0;
 				}
-				xjoymoveRaw = xjoymoveCommand;
 			}
-			if (js.number == 1) //RH JOY UP/DOWN
+			if (js.number == 4) //RH JOY UP/DOWN
 			{
 				joyValue2 = js.value/32; //convert to appx 0 to 1024
-				zjoymoveCommand = (float)joyValue2/102.4; //sensitivity limit 0 to 10, not reversed 
+				//zjoymoveCommand = (float)joyValue2/102.4; //sensitivity limit 0 to 10 
+				zjoymoveCommand = (float)joyValue2/25.6; //sensitivity limit 0 to 40
 				//zjoymoveCommand = (float)joyValue2/-25.6; //sensitivity limit 0 to 40, reversed
-				//zjoymoveCommand = (float)joyValue2/25.6; //sensitivity limit 0 to 40, not reversed
-				//zjoymoveCommand = (float)joyValue2/38.4; //sensitivity limit 0 to 30, not reversed
-				//zjoymoveCommand = (float)joyValue2/51.2; //sensitivity limit 0 to 20, not reversed
 
 				//add deadband
 				if ((zjoymoveCommand < 0.2) && (zjoymoveCommand > -0.2))
 				{
 					zjoymoveCommand = 0;
 				}
-				zjoymoveRaw = zjoymoveCommand;
 			}
 		}
 	return TRUE;
@@ -2849,7 +2847,7 @@ gboolean on_drawingarea2_draw (GtkWidget *widget, cairo_t *cr, gpointer data)
 
 	cairo_move_to(cr, 10, 60);
 	//sprintf(strMisc, "Version: %5.2f", BUILD_NUMBER);
-	sprintf(strMisc, "%s", BUILD_NUMBER);
+	sprintf(strMisc, "Version: %s", BUILD_NUMBER);
 	cairo_show_text(cr, strMisc);
 
 	return FALSE;
@@ -3140,16 +3138,6 @@ gboolean on_elevationDrawArea_draw (GtkWidget *widget, cairo_t *cr, gpointer dat
 		cairo_stroke(cr);
 	}
 
-	//boundary values
-	cairo_set_font_size(cr, 16);
-	cairo_set_source_rgba (cr, RED01);
-	cairo_move_to(cr, -280, -10);
-	sprintf(strMisc, "Y MIN: %3.1f m", systemBoundary.ymin/100);
-	cairo_show_text(cr, strMisc);
-	cairo_move_to(cr, -280, -120);
-	sprintf(strMisc, "Y MAX: %3.1f m", systemBoundary.ymax/100);
-	cairo_show_text(cr, strMisc);
-
 
 	//draw path
 	cairo_set_line_width (cr, 2.0);
@@ -3265,11 +3253,20 @@ gboolean on_floorDrawArea_draw (GtkWidget *widget, cairo_t *cr, gpointer data)
 	cairo_set_line_width (cr, 2.0);
 	cairo_set_source_rgba (cr, RED01);
 	cairo_set_dash(cr, dash1, 2, 0);
-	cairo_rectangle (cr,
-		systemBoundary.xmin/MP_SCALE, //corner x
-		systemBoundary.zmin/MP_SCALE, //corner z
-		(systemBoundary.xmax - systemBoundary.xmin)/MP_SCALE,  //length x
-		(systemBoundary.zmax - systemBoundary.zmin)/MP_SCALE); //length z
+	//cairo_rectangle (cr,
+	//	systemBoundary.xmin/MP_SCALE, //corner x
+	//	systemBoundary.zmin/MP_SCALE, //corner z
+	//	(systemBoundary.xmax - systemBoundary.xmin)/MP_SCALE,  //length x
+	//	(systemBoundary.zmax - systemBoundary.zmin)/MP_SCALE); //length z
+
+
+	cairo_move_to (cr, BP1.x/MP_SCALE, BP1.z/MP_SCALE);
+	cairo_line_to (cr, BP2.x/MP_SCALE, BP2.z/MP_SCALE);
+	cairo_line_to (cr, BP3.x/MP_SCALE, BP3.z/MP_SCALE);
+	cairo_line_to (cr, BP4.x/MP_SCALE, BP4.z/MP_SCALE);
+	cairo_line_to (cr, BP1.x/MP_SCALE, BP1.z/MP_SCALE);
+
+	
 	cairo_stroke(cr);
 	cairo_set_dash(cr, dash1, OFF, 0);
 
@@ -3307,12 +3304,11 @@ gboolean on_floorDrawArea_draw (GtkWidget *widget, cairo_t *cr, gpointer data)
 	cairo_show_text(cr, strMisc);
 
 	//draw boundary value text
-	cairo_set_font_size(cr, 14);
 	cairo_set_source_rgba (cr, RED01);
-	cairo_move_to(cr, systemBoundary.xmin/MP_SCALE-20, -100);
+	cairo_move_to(cr, systemBoundary.xmin/MP_SCALE-20, -150);
 	sprintf(strMisc, "%3.1f m", systemBoundary.xmin/100);
 	cairo_show_text(cr, strMisc);
-	cairo_move_to(cr, systemBoundary.xmax/MP_SCALE-20, -100);
+	cairo_move_to(cr, systemBoundary.xmax/MP_SCALE-20, -150);
 	sprintf(strMisc, "%3.1f m", systemBoundary.xmax/100);
 	cairo_show_text(cr, strMisc);
 
@@ -4148,7 +4144,7 @@ void on_btnFloorOnOff_clicked ()
 	{
 		systemBoundary.floor = OFF;
 	}
-	else if ((systemBoundary.floor == OFF) && (motionCommand.yPosition > systemBoundary.yminSaved))
+	else
 	{
 		systemBoundary.floor = ON;
 	}

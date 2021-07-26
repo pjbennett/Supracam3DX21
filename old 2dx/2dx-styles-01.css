@@ -1,0 +1,37 @@
+
+GtkWindow {
+	background-color: #000000;
+}
+
+GtkLabel {
+    font-family: MS33558;
+    font-size: 12px;
+    color:#00B9F0;
+}
+
+GtkTreeView {
+	background-color: #000000;
+    font-size: 9px;
+    font-family: Arial;
+    color:#00B9F0;
+}
+
+GtkTreeView row:selected {
+    color:#EDD400;
+}
+
+
+GtkTextView {
+	background-color: #000000;
+    font-size: 9px;
+    font-family: Arial;
+    color:#00B9F0;
+}
+
+.btnServo GtkLabel {
+	font-family: UbuntuMono;
+    font-size: 18px;
+    color: #FFAE00;
+}
+
+

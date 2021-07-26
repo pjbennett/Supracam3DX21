@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.22.1 -->
+<!-- Generated with glade 3.22.2 -->
 <interface>
   <requires lib="gtk+" version="3.12"/>
   <object class="GtkListStore" id="liststore1">
@@ -86,11 +86,11 @@
     <property name="hide_titlebar_when_maximized">True</property>
     <property name="deletable">False</property>
     <signal name="destroy" handler="on_window_main_destroy" swapped="no"/>
-    <child>
+    <child type="titlebar">
       <placeholder/>
     </child>
     <child>
-      <object class="GtkFixed" id="fixed1">
+      <object class="GtkFixed" id="MainFixed">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <child>
@@ -507,6 +507,9 @@
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
             <signal name="clicked" handler="on_btnSurvey_clicked" swapped="no"/>
+            <style>
+              <class name="button3dx"/>
+            </style>
           </object>
           <packing>
             <property name="x">1045</property>
@@ -638,6 +641,7 @@
             <signal name="clicked" handler="on_btnServoOn_clicked" swapped="no"/>
             <style>
               <class name="btnServo"/>
+              <class name="button3dx"/>
             </style>
           </object>
           <packing>
@@ -922,6 +926,9 @@
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
             <signal name="clicked" handler="on_btnResetLoad1_clicked" swapped="no"/>
+            <style>
+              <class name="button3dx"/>
+            </style>
           </object>
           <packing>
             <property name="x">1690</property>
@@ -937,6 +944,9 @@
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
             <signal name="clicked" handler="on_btnResetLoad2_clicked" swapped="no"/>
+            <style>
+              <class name="button3dx"/>
+            </style>
           </object>
           <packing>
             <property name="x">1690</property>
@@ -952,6 +962,9 @@
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
             <signal name="clicked" handler="on_btnResetLoad3_clicked" swapped="no"/>
+            <style>
+              <class name="button3dx"/>
+            </style>
           </object>
           <packing>
             <property name="x">1690</property>
@@ -967,6 +980,9 @@
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
             <signal name="clicked" handler="on_btnResetLoad4_clicked" swapped="no"/>
+            <style>
+              <class name="button3dx"/>
+            </style>
           </object>
           <packing>
             <property name="x">1690</property>
@@ -1044,16 +1060,17 @@
         <child>
           <object class="GtkNotebook" id="nbEngrData">
             <property name="width_request">565</property>
-            <property name="height_request">280</property>
+            <property name="height_request">160</property>
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <child>
               <object class="GtkFixed" id="fixed7">
+                <property name="width_request">525</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <child>
                   <object class="GtkDrawingArea" id="areaSpeedChart">
-                    <property name="width_request">545</property>
+                    <property name="width_request">500</property>
                     <property name="height_request">200</property>
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
@@ -1090,7 +1107,7 @@
                     <signal name="clicked" handler="on_btnZoomOut_clicked" swapped="no"/>
                   </object>
                   <packing>
-                    <property name="x">450</property>
+                    <property name="x">118</property>
                     <property name="y">220</property>
                   </packing>
                 </child>
@@ -1108,6 +1125,7 @@
             </child>
             <child>
               <object class="GtkFixed" id="fixed5">
+                <property name="width_request">500</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <child>
@@ -1120,9 +1138,12 @@
                     <property name="label" translatable="yes">serial data</property>
                     <property name="xalign">0</property>
                     <attributes>
-                      <attribute name="font-desc" value="Courier 10 Pitch 14"/>
+                      <attribute name="font-desc" value="Ubuntu Mono 10"/>
                       <attribute name="foreground" value="#c4c4a0a00000"/>
                     </attributes>
+                    <style>
+                      <class name="commslabel"/>
+                    </style>
                   </object>
                   <packing>
                     <property name="x">20</property>
@@ -1139,7 +1160,7 @@
                     <property name="label" translatable="yes">serial data</property>
                     <property name="xalign">0</property>
                     <attributes>
-                      <attribute name="font-desc" value="Courier 10 Pitch 14"/>
+                      <attribute name="font-desc" value="Ubuntu Mono 14"/>
                       <attribute name="foreground" value="#7373d2d21616"/>
                     </attributes>
                   </object>
@@ -1157,7 +1178,7 @@
                     <property name="label" translatable="yes">serial data</property>
                     <property name="xalign">0</property>
                     <attributes>
-                      <attribute name="font-desc" value="Courier 10 Pitch 14"/>
+                      <attribute name="font-desc" value="Ubuntu Mono 14"/>
                       <attribute name="foreground" value="#7373d2d21616"/>
                     </attributes>
                   </object>
@@ -1175,7 +1196,7 @@
                     <property name="label" translatable="yes">serial data</property>
                     <property name="xalign">0</property>
                     <attributes>
-                      <attribute name="font-desc" value="Courier 10 Pitch 14"/>
+                      <attribute name="font-desc" value="Ubuntu Mono 14"/>
                       <attribute name="foreground" value="#7373d2d21616"/>
                     </attributes>
                   </object>
@@ -1194,7 +1215,7 @@
                     <property name="label" translatable="yes">serial data</property>
                     <property name="xalign">0</property>
                     <attributes>
-                      <attribute name="font-desc" value="Courier 10 Pitch 14"/>
+                      <attribute name="font-desc" value="Ubuntu Mono 14"/>
                       <attribute name="foreground" value="#7373d2d21616"/>
                     </attributes>
                   </object>
@@ -1665,23 +1686,6 @@
             <property name="y">125</property>
           </packing>
         </child>
-        <child>
-          <object class="GtkLabel" id="lblTime">
-            <property name="width_request">200</property>
-            <property name="height_request">40</property>
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="label" translatable="yes">00:00:00</property>
-            <attributes>
-              <attribute name="font-desc" value="Ubuntu Mono 24"/>
-              <attribute name="foreground" value="#ffffaeae0000"/>
-            </attributes>
-          </object>
-          <packing>
-            <property name="x">645</property>
-            <property name="y">106</property>
-          </packing>
-        </child>
       </object>
     </child>
   </object>
@@ -1690,7 +1694,7 @@
     <property name="type_hint">dialog</property>
     <property name="transient_for">window_main</property>
     <signal name="response" handler="on_dlgBoundary_response" swapped="no"/>
-    <child>
+    <child type="titlebar">
       <placeholder/>
     </child>
     <child internal-child="vbox">
@@ -1737,8 +1741,8 @@
         </child>
         <child>
           <object class="GtkFixed" id="fixed4">
-            <property name="width_request">375</property>
-            <property name="height_request">250</property>
+            <property name="width_request">480</property>
+            <property name="height_request">285</property>
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <child>
@@ -1765,8 +1769,9 @@
                 <property name="height_request">30</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Minimum</property>
+                <property name="label" translatable="yes">X (L/R)</property>
                 <attributes>
+                  <attribute name="font-desc" value="Ubuntu Mono Bold 14"/>
                   <attribute name="foreground" value="#88888a8a8585"/>
                 </attributes>
               </object>
@@ -1776,7 +1781,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkEntry" id="entBoundaryXmin">
+              <object class="GtkEntry" id="entBoundaryP1X">
                 <property name="width_request">100</property>
                 <property name="height_request">30</property>
                 <property name="visible">True</property>
@@ -1790,7 +1795,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkEntry" id="entBoundaryXmax">
+              <object class="GtkEntry" id="entBoundaryP1Y">
                 <property name="width_request">100</property>
                 <property name="height_request">30</property>
                 <property name="visible">True</property>
@@ -1810,8 +1815,9 @@
                 <property name="height_request">30</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Maximum</property>
+                <property name="label" translatable="yes">Y (up/down)</property>
                 <attributes>
+                  <attribute name="font-desc" value="Ubuntu Mono Bold 14"/>
                   <attribute name="foreground" value="#88888a8a8585"/>
                 </attributes>
               </object>
@@ -1821,7 +1827,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkEntry" id="entBoundaryYmin">
+              <object class="GtkEntry" id="entBoundaryP2X">
                 <property name="width_request">100</property>
                 <property name="height_request">30</property>
                 <property name="visible">True</property>
@@ -1835,7 +1841,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkEntry" id="entBoundaryYmax">
+              <object class="GtkEntry" id="entBoundaryP2Y">
                 <property name="width_request">100</property>
                 <property name="height_request">30</property>
                 <property name="visible">True</property>
@@ -1849,7 +1855,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkEntry" id="entBoundaryZmin">
+              <object class="GtkEntry" id="entBoundaryP3X">
                 <property name="width_request">100</property>
                 <property name="height_request">30</property>
                 <property name="visible">True</property>
@@ -1863,7 +1869,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkEntry" id="entBoundaryZmax">
+              <object class="GtkEntry" id="entBoundaryP3Y">
                 <property name="width_request">100</property>
                 <property name="height_request">30</property>
                 <property name="visible">True</property>
@@ -1883,8 +1889,7 @@
                 <property name="height_request">34</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">X Axis
-(left/right)</property>
+                <property name="label" translatable="yes">Boundary P1</property>
                 <property name="justify">center</property>
                 <attributes>
                   <attribute name="foreground" value="#88888a8a8585"/>
@@ -1902,8 +1907,7 @@
                 <property name="height_request">34</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Y Axis
-(up/down)</property>
+                <property name="label" translatable="yes">Boundary P2</property>
                 <property name="justify">center</property>
                 <attributes>
                   <attribute name="foreground" value="#88888a8a8585"/>
@@ -1921,8 +1925,7 @@
                 <property name="height_request">34</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Z Axis
-(front/back)</property>
+                <property name="label" translatable="yes">Boundary P3</property>
                 <property name="justify">center</property>
                 <attributes>
                   <attribute name="foreground" value="#88888a8a8585"/>
@@ -1930,7 +1933,128 @@
               </object>
               <packing>
                 <property name="x">16</property>
-                <property name="y">176</property>
+                <property name="y">180</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="entBoundaryP4Y">
+                <property name="width_request">100</property>
+                <property name="height_request">30</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="width_chars">5</property>
+                <property name="input_purpose">digits</property>
+              </object>
+              <packing>
+                <property name="x">240</property>
+                <property name="y">230</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="entBoundaryP1Z">
+                <property name="width_request">100</property>
+                <property name="height_request">34</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="width_chars">5</property>
+                <property name="input_purpose">digits</property>
+              </object>
+              <packing>
+                <property name="x">355</property>
+                <property name="y">80</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="entBoundaryP2Z">
+                <property name="width_request">100</property>
+                <property name="height_request">34</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="width_chars">5</property>
+                <property name="input_purpose">digits</property>
+              </object>
+              <packing>
+                <property name="x">355</property>
+                <property name="y">130</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="entBoundaryP4X">
+                <property name="width_request">100</property>
+                <property name="height_request">34</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="width_chars">5</property>
+                <property name="input_purpose">digits</property>
+              </object>
+              <packing>
+                <property name="x">125</property>
+                <property name="y">230</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="entBoundaryP3Z">
+                <property name="width_request">100</property>
+                <property name="height_request">34</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="width_chars">5</property>
+                <property name="input_purpose">digits</property>
+              </object>
+              <packing>
+                <property name="x">355</property>
+                <property name="y">180</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="entBoundaryP4Z">
+                <property name="width_request">100</property>
+                <property name="height_request">34</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="width_chars">5</property>
+                <property name="input_purpose">digits</property>
+              </object>
+              <packing>
+                <property name="x">355</property>
+                <property name="y">230</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel" id="label30">
+                <property name="name">30</property>
+                <property name="width_request">100</property>
+                <property name="height_request">30</property>
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">Boundary P4</property>
+                <property name="justify">center</property>
+                <attributes>
+                  <attribute name="foreground" value="#88888a8a8585"/>
+                </attributes>
+              </object>
+              <packing>
+                <property name="x">15</property>
+                <property name="y">231</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel" id="label31">
+                <property name="name">30</property>
+                <property name="width_request">100</property>
+                <property name="height_request">30</property>
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">Z (in/out)</property>
+                <property name="justify">center</property>
+                <attributes>
+                  <attribute name="font-desc" value="Ubuntu Mono Bold 14"/>
+                  <attribute name="foreground" value="#88888a8a8585"/>
+                </attributes>
+              </object>
+              <packing>
+                <property name="x">355</property>
+                <property name="y">50</property>
               </packing>
             </child>
           </object>
@@ -1953,7 +2077,7 @@
     <property name="type_hint">dialog</property>
     <property name="transient_for">window_main</property>
     <signal name="response" handler="on_dlgCurrentPosition_response" swapped="no"/>
-    <child>
+    <child type="titlebar">
       <placeholder/>
     </child>
     <child internal-child="vbox">
@@ -2182,7 +2306,7 @@
     <property name="deletable">False</property>
     <property name="transient_for">window_main</property>
     <signal name="response" handler="on_dlgExit_response" swapped="no"/>
-    <child>
+    <child type="titlebar">
       <placeholder/>
     </child>
     <child internal-child="vbox">
@@ -2261,7 +2385,7 @@
     <property name="type_hint">dialog</property>
     <property name="transient_for">window_main</property>
     <signal name="response" handler="on_dlgSurvey_response" swapped="no"/>
-    <child>
+    <child type="titlebar">
       <placeholder/>
     </child>
     <child internal-child="vbox">
