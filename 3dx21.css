@@ -12,12 +12,10 @@ fixed {
 	background-color: #000000;
 }
 
-bob {
-    font-family: MS33558;
-    font-size: 12px;
-    color:#00B9F0;
-}
 
+dialog {
+	background-color: #222222;
+}
 
 
 TreeView {
@@ -83,3 +81,11 @@ button {
     color:#00B9F0;
 }
 
+textview text {
+    background-color: #111111;
+  }
+  
+
+#myTreeView {
+    background-color: #111111;
+  }

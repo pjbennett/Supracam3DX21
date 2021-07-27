@@ -348,9 +348,6 @@
                     </child>
                   </object>
                 </child>
-                <style>
-                  <class name="myTreeView"/>
-                </style>
               </object>
             </child>
           </object>
@@ -928,14 +925,14 @@
           </object>
           <packing>
             <property name="x">1690</property>
-            <property name="y">315</property>
+            <property name="y">320</property>
           </packing>
         </child>
         <child>
           <object class="GtkButton" id="btnResetLoad2">
             <property name="label" translatable="yes">RST</property>
             <property name="width_request">30</property>
-            <property name="height_request">25</property>
+            <property name="height_request">30</property>
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
@@ -943,14 +940,14 @@
           </object>
           <packing>
             <property name="x">1690</property>
-            <property name="y">515</property>
+            <property name="y">520</property>
           </packing>
         </child>
         <child>
           <object class="GtkButton" id="btnResetLoad3">
             <property name="label" translatable="yes">RST</property>
             <property name="width_request">30</property>
-            <property name="height_request">25</property>
+            <property name="height_request">30</property>
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
@@ -958,14 +955,14 @@
           </object>
           <packing>
             <property name="x">1690</property>
-            <property name="y">715</property>
+            <property name="y">720</property>
           </packing>
         </child>
         <child>
           <object class="GtkButton" id="btnResetLoad4">
             <property name="label" translatable="yes">RST</property>
             <property name="width_request">39</property>
-            <property name="height_request">25</property>
+            <property name="height_request">30</property>
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
@@ -973,7 +970,7 @@
           </object>
           <packing>
             <property name="x">1690</property>
-            <property name="y">915</property>
+            <property name="y">920</property>
           </packing>
         </child>
         <child>
@@ -1740,8 +1737,8 @@
         </child>
         <child>
           <object class="GtkFixed" id="fixed4">
-            <property name="width_request">485</property>
-            <property name="height_request">396</property>
+            <property name="width_request">375</property>
+            <property name="height_request">250</property>
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <child>
@@ -1757,7 +1754,7 @@
                 </attributes>
               </object>
               <packing>
-                <property name="x">122</property>
+                <property name="x">63</property>
                 <property name="y">14</property>
               </packing>
             </child>
@@ -1768,18 +1765,18 @@
                 <property name="height_request">30</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">X (-left/+right)</property>
+                <property name="label" translatable="yes">Minimum</property>
                 <attributes>
                   <attribute name="foreground" value="#88888a8a8585"/>
                 </attributes>
               </object>
               <packing>
-                <property name="x">140</property>
+                <property name="x">125</property>
                 <property name="y">50</property>
               </packing>
             </child>
             <child>
-              <object class="GtkEntry" id="entBoundaryP1X">
+              <object class="GtkEntry" id="entBoundaryXmin">
                 <property name="width_request">100</property>
                 <property name="height_request">30</property>
                 <property name="visible">True</property>
@@ -1788,12 +1785,12 @@
                 <property name="input_purpose">digits</property>
               </object>
               <packing>
-                <property name="x">140</property>
+                <property name="x">125</property>
                 <property name="y">80</property>
               </packing>
             </child>
             <child>
-              <object class="GtkEntry" id="entBoundaryP1Z">
+              <object class="GtkEntry" id="entBoundaryXmax">
                 <property name="width_request">100</property>
                 <property name="height_request">30</property>
                 <property name="visible">True</property>
@@ -1802,7 +1799,7 @@
                 <property name="input_purpose">digits</property>
               </object>
               <packing>
-                <property name="x">260</property>
+                <property name="x">240</property>
                 <property name="y">80</property>
               </packing>
             </child>
@@ -1813,18 +1810,18 @@
                 <property name="height_request">30</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Z (-front/+back)</property>
+                <property name="label" translatable="yes">Maximum</property>
                 <attributes>
                   <attribute name="foreground" value="#88888a8a8585"/>
                 </attributes>
               </object>
               <packing>
-                <property name="x">260</property>
+                <property name="x">240</property>
                 <property name="y">50</property>
               </packing>
             </child>
             <child>
-              <object class="GtkEntry" id="entBoundaryP2X">
+              <object class="GtkEntry" id="entBoundaryYmin">
                 <property name="width_request">100</property>
                 <property name="height_request">30</property>
                 <property name="visible">True</property>
@@ -1833,12 +1830,12 @@
                 <property name="input_purpose">digits</property>
               </object>
               <packing>
-                <property name="x">140</property>
+                <property name="x">125</property>
                 <property name="y">130</property>
               </packing>
             </child>
             <child>
-              <object class="GtkEntry" id="entBoundaryP2Z">
+              <object class="GtkEntry" id="entBoundaryYmax">
                 <property name="width_request">100</property>
                 <property name="height_request">30</property>
                 <property name="visible">True</property>
@@ -1847,12 +1844,12 @@
                 <property name="input_purpose">digits</property>
               </object>
               <packing>
-                <property name="x">260</property>
+                <property name="x">240</property>
                 <property name="y">130</property>
               </packing>
             </child>
             <child>
-              <object class="GtkEntry" id="entBoundaryP3X">
+              <object class="GtkEntry" id="entBoundaryZmin">
                 <property name="width_request">100</property>
                 <property name="height_request">30</property>
                 <property name="visible">True</property>
@@ -1861,12 +1858,12 @@
                 <property name="input_purpose">digits</property>
               </object>
               <packing>
-                <property name="x">140</property>
+                <property name="x">125</property>
                 <property name="y">180</property>
               </packing>
             </child>
             <child>
-              <object class="GtkEntry" id="entBoundaryP3Z">
+              <object class="GtkEntry" id="entBoundaryZmax">
                 <property name="width_request">100</property>
                 <property name="height_request">30</property>
                 <property name="visible">True</property>
@@ -1875,7 +1872,7 @@
                 <property name="input_purpose">digits</property>
               </object>
               <packing>
-                <property name="x">260</property>
+                <property name="x">240</property>
                 <property name="y">180</property>
               </packing>
             </child>
@@ -1886,15 +1883,16 @@
                 <property name="height_request">34</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Boundary Point 1</property>
+                <property name="label" translatable="yes">X Axis
+(left/right)</property>
                 <property name="justify">center</property>
                 <attributes>
                   <attribute name="foreground" value="#88888a8a8585"/>
                 </attributes>
               </object>
               <packing>
-                <property name="x">10</property>
-                <property name="y">80</property>
+                <property name="x">14</property>
+                <property name="y">76</property>
               </packing>
             </child>
             <child>
@@ -1904,15 +1902,16 @@
                 <property name="height_request">34</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Boundary Point 2</property>
+                <property name="label" translatable="yes">Y Axis
+(up/down)</property>
                 <property name="justify">center</property>
                 <attributes>
                   <attribute name="foreground" value="#88888a8a8585"/>
                 </attributes>
               </object>
               <packing>
-                <property name="x">10</property>
-                <property name="y">130</property>
+                <property name="x">15</property>
+                <property name="y">127</property>
               </packing>
             </child>
             <child>
@@ -1922,125 +1921,16 @@
                 <property name="height_request">34</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Boundary Point 3</property>
+                <property name="label" translatable="yes">Z Axis
+(front/back)</property>
                 <property name="justify">center</property>
                 <attributes>
                   <attribute name="foreground" value="#88888a8a8585"/>
                 </attributes>
               </object>
               <packing>
-                <property name="x">10</property>
-                <property name="y">180</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkLabel" id="label30">
-                <property name="name">30</property>
-                <property name="width_request">114</property>
-                <property name="height_request">30</property>
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Boundary Point 4</property>
-                <property name="justify">center</property>
-                <attributes>
-                  <attribute name="foreground" value="#88888a8a8585"/>
-                </attributes>
-              </object>
-              <packing>
-                <property name="x">10</property>
-                <property name="y">230</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkEntry" id="entBoundaryP4X">
-                <property name="width_request">100</property>
-                <property name="height_request">34</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="width_chars">5</property>
-                <property name="input_purpose">digits</property>
-              </object>
-              <packing>
-                <property name="x">140</property>
-                <property name="y">230</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkEntry" id="entBoundaryP4Z">
-                <property name="width_request">100</property>
-                <property name="height_request">34</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="width_chars">5</property>
-                <property name="input_purpose">digits</property>
-              </object>
-              <packing>
-                <property name="x">260</property>
-                <property name="y">230</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkLabel" id="label31">
-                <property name="name">30</property>
-                <property name="width_request">114</property>
-                <property name="height_request">30</property>
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Ceiling (Y max)</property>
-                <property name="justify">center</property>
-                <attributes>
-                  <attribute name="foreground" value="#88888a8a8585"/>
-                </attributes>
-              </object>
-              <packing>
-                <property name="x">21</property>
-                <property name="y">303</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkLabel" id="label32">
-                <property name="name">30</property>
-                <property name="width_request">100</property>
-                <property name="height_request">30</property>
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Floor (Y min)</property>
-                <property name="justify">center</property>
-                <attributes>
-                  <attribute name="foreground" value="#88888a8a8585"/>
-                </attributes>
-              </object>
-              <packing>
-                <property name="x">35</property>
-                <property name="y">352</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkEntry" id="entBoundaryYmax">
-                <property name="width_request">100</property>
-                <property name="height_request">34</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="width_chars">5</property>
-                <property name="input_purpose">digits</property>
-              </object>
-              <packing>
-                <property name="x">140</property>
-                <property name="y">300</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkEntry" id="entBoundaryYmin">
-                <property name="width_request">100</property>
-                <property name="height_request">34</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="width_chars">5</property>
-                <property name="input_purpose">digits</property>
-              </object>
-              <packing>
-                <property name="x">140</property>
-                <property name="y">350</property>
+                <property name="x">16</property>
+                <property name="y">176</property>
               </packing>
             </child>
           </object>
@@ -2350,7 +2240,6 @@
             <attributes>
               <attribute name="font-desc" value="DejaVu Sans Semi-Condensed 10"/>
               <attribute name="scale" value="1.5"/>
-              <attribute name="foreground" value="#eeeeeeeeecec"/>
             </attributes>
           </object>
           <packing>

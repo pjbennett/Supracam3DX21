@@ -27,6 +27,10 @@
 //05-MAR-2020 v1.18.1 Added time of day display, Y boundary display
 //06-MAR-2020 v1.20.1 changed floor on/off button to set floor at 2m
 
+//26-JUL-2021 v21.01.01 added triangular boundaries, other small fixes
+
+
+
 
 #define BUILD_NUMBER "21.01.01"
 #define GLADE_FILE_NAME "3dx21.glade"
@@ -121,7 +125,7 @@
 #define WINCH_TELEMETRY_CHART_X 112
 #define WINCH_TELEMETRY_CHART_Y 155
 
-#define MP_SCALE 40
+#define MP_SCALE 10
 
 #define PTR_Y_OFFSET 50.0 //in cm
 #define FLASH_TOGGLE_RATE 10
@@ -275,12 +279,17 @@ GtkLabel *g_lblModeStatus2;
 GtkLabel *g_lblPlayBackStatus;
 
 GtkWidget *g_dlgBoundary;
-GtkEntry *g_setBoundaryXmin;
-GtkEntry *g_setBoundaryXmax;
+GtkEntry *g_setBoundaryP1X;
+GtkEntry *g_setBoundaryP1Z;
+GtkEntry *g_setBoundaryP2X;
+GtkEntry *g_setBoundaryP2Z;
+GtkEntry *g_setBoundaryP3X;
+GtkEntry *g_setBoundaryP3Z;
+GtkEntry *g_setBoundaryP4X;
+GtkEntry *g_setBoundaryP4Z;
+
 GtkEntry *g_setBoundaryYmin;
 GtkEntry *g_setBoundaryYmax;
-GtkEntry *g_setBoundaryZmin;
-GtkEntry *g_setBoundaryZmax;
 
 
 GtkButton *g_btnFloor;
@@ -454,6 +463,25 @@ struct MotionCommandStruct {
 	};
 struct MotionCommandStruct motionCommand; //commanded Position
 struct MotionCommandStruct motionCommandPrev; //commanded Position
+
+struct BoundaryPoints {
+	float x;
+	float y;
+	float z;
+};
+struct BoundaryPoints BP1;
+struct BoundaryPoints BP2;
+struct BoundaryPoints BP3;
+struct BoundaryPoints BP4;
+
+struct Line {
+	float slope;
+	float b;
+};
+struct Line line12;
+struct Line line23;
+struct Line line34;
+struct Line line41;
 
 
 int mdcount;
@@ -633,7 +661,7 @@ int joystickStatus = 0;
 #define WINCH_IGNORE_ALL_BUT_3 	103
 #define WINCH_IGNORE_ALL_BUT_4 	104
 
-int simulationTest = FALSE;
+int simulationTest = TRUE;
 
 //-------------------------------------
 
@@ -698,15 +726,35 @@ int main (int argc, char *argv[])
 	motionCommand.yPosition = yPositionStartUp;
 	motionCommand.zPosition = zPositionStartUp;
 	
-	systemBoundary.xmin = g_key_file_get_double (gkfd,"boundary","boundaryXmin",NULL);
-	systemBoundary.xmax = g_key_file_get_double (gkfd,"boundary","boundaryXmax",NULL);
+
 	systemBoundary.ymin = g_key_file_get_double (gkfd,"boundary","boundaryYmin",NULL);
 	systemBoundary.ymax = g_key_file_get_double (gkfd,"boundary","boundaryYmax",NULL);
-	systemBoundary.zmin = g_key_file_get_double (gkfd,"boundary","boundaryZmin",NULL);
-	systemBoundary.zmax = g_key_file_get_double (gkfd,"boundary","boundaryZmax",NULL);
+
+	BP1.x = g_key_file_get_double (gkfd,"boundary","boundaryP1X",NULL);
+	BP1.z = g_key_file_get_double (gkfd,"boundary","boundaryP1Z",NULL);
+	BP2.x = g_key_file_get_double (gkfd,"boundary","boundaryP2X",NULL);
+	BP2.z = g_key_file_get_double (gkfd,"boundary","boundaryP2Z",NULL);
+	BP3.x = g_key_file_get_double (gkfd,"boundary","boundaryP3X",NULL);
+	BP3.z = g_key_file_get_double (gkfd,"boundary","boundaryP3Z",NULL);
+	BP4.x = g_key_file_get_double (gkfd,"boundary","boundaryP4X",NULL);
+	BP4.z = g_key_file_get_double (gkfd,"boundary","boundaryP4Z",NULL);
+
 
 	systemBoundary.floor = ON;
 	systemBoundary.yminSaved = systemBoundary.ymin;
+
+	/*
+	BP1.x = -100;
+	BP1.z = 1200;
+	BP2.x = -1200;
+	BP2.z = -1200;
+	BP3.x = 1200;
+	BP3.z = -1200;
+	BP4.x = 100;
+	BP4.z = 1200;
+	*/
+
+
 	//END ----------------- Read Config File ---------------
 
 
@@ -895,12 +943,17 @@ int main (int argc, char *argv[])
   g_lblTime = GTK_LABEL(gtk_builder_get_object(builder, "lblTime"));
 
   g_dlgBoundary = GTK_WIDGET(gtk_builder_get_object(builder, "dlgBoundary"));
-  g_setBoundaryXmin = GTK_ENTRY(gtk_builder_get_object(builder, "entBoundaryXmin"));
-  g_setBoundaryXmax = GTK_ENTRY(gtk_builder_get_object(builder, "entBoundaryXmax"));
   g_setBoundaryYmin = GTK_ENTRY(gtk_builder_get_object(builder, "entBoundaryYmin"));
   g_setBoundaryYmax = GTK_ENTRY(gtk_builder_get_object(builder, "entBoundaryYmax"));
-  g_setBoundaryZmin = GTK_ENTRY(gtk_builder_get_object(builder, "entBoundaryZmin"));
-  g_setBoundaryZmax = GTK_ENTRY(gtk_builder_get_object(builder, "entBoundaryZmax"));
+ 
+  g_setBoundaryP1X = GTK_ENTRY(gtk_builder_get_object(builder, "entBoundaryP1X"));
+  g_setBoundaryP1Z = GTK_ENTRY(gtk_builder_get_object(builder, "entBoundaryP1Z"));
+  g_setBoundaryP2X = GTK_ENTRY(gtk_builder_get_object(builder, "entBoundaryP2X"));
+  g_setBoundaryP2Z = GTK_ENTRY(gtk_builder_get_object(builder, "entBoundaryP2Z"));
+  g_setBoundaryP3X = GTK_ENTRY(gtk_builder_get_object(builder, "entBoundaryP3X"));
+  g_setBoundaryP3Z = GTK_ENTRY(gtk_builder_get_object(builder, "entBoundaryP3Z"));
+  g_setBoundaryP4X = GTK_ENTRY(gtk_builder_get_object(builder, "entBoundaryP4X"));
+  g_setBoundaryP4Z = GTK_ENTRY(gtk_builder_get_object(builder, "entBoundaryP4Z"));
 
   g_btnFloor = GTK_BUTTON(gtk_builder_get_object(builder, "btnFloorOnOff"));
 
@@ -1424,6 +1477,17 @@ void* motorControllerThread (void *arg)
 				xjoymoveSmoothed = 0;
 			}
 		}
+
+		//calculate current xmin
+		line12.slope = (BP2.z - BP1.z)/(BP2.x - BP1.x);
+		line12.b = BP1.z - (line12.slope * BP1.x);
+		systemBoundary.xmin = (zPositionCurrent - line12.b)/line12.slope;
+		
+		//calculate current xmax
+		line34.slope = (BP4.z - BP3.z)/(BP4.x - BP3.x);
+		line34.b = BP3.z - (line34.slope * BP3.x);
+		systemBoundary.xmax = (zPositionCurrent - line34.b)/line34.slope;
+
 		
 		//boundary smoothing
 		if (xjoymoveSmoothed > 0)
@@ -1495,7 +1559,9 @@ void* motorControllerThread (void *arg)
 			}
 		}
 
-		
+		systemBoundary.zmax = BP4.z;
+		systemBoundary.zmin = BP3.z;
+
 		//boundary smoothing
 		if (zjoymoveSmoothed > 0)
 		{		
@@ -2108,10 +2174,10 @@ gboolean timeoutFunction (gpointer data)
 
 
 	//sprintf(strMisc, "JOYSTICK PAN: %6.3f", pjoymoveCommand);
-	sprintf(strMisc, "MANUAL PAN: %06.2f", panManualMultiTurnValue);
+	sprintf(strMisc, "BP1.x: %06.2f", BP1.x);
 	gtk_label_set_text(GTK_LABEL(g_lbl_joyvalue), strMisc);
 
-	sprintf(strMisc, "MOTION PAN: %06.2f", motionData[mdcount].panMultiTurn);
+	sprintf(strMisc, "BP1.z: %06.2f", BP1.z);
 	gtk_label_set_text(GTK_LABEL(g_lblDebug2), strMisc);
 
 	//gtk_label_set_text(GTK_LABEL(g_lblJogTest), "Not Jogging");
@@ -2750,13 +2816,14 @@ gboolean on_joystick_change (GIOChannel *source, GIOCondition condition, gpointe
 			//	joytest1 = (float)joyValue2/-341.0; //sensitivity limit 0 to 3
 			//}
 
-			if (js.number == 3) //LH JOY UP/DOWN
+			if (js.number == 1) //LH JOY UP/DOWN
 			{
 				joyValue2 = js.value/32; //convert to appx 0 to 1024
 				//yjoymoveCommand = (float)joyValue2/-341.0; //sensitivity limit 0 to 3, reversed
 				//yjoymoveCommand = ((float)joyValue2/51.2); //sensitivity limit 0 to 20, not reversed
 				//yjoymoveCommand = ((float)joyValue2/34.1); //sensitivity limit 0 to 30, not reversed
-				yjoymoveCommand = ((float)joyValue2/102.4); //sensitivity limit 0 to 10, not reversed
+				//yjoymoveCommand = ((float)joyValue2/102.4); //sensitivity limit 0 to 10, not reversed
+				yjoymoveCommand = ((float)joyValue2/-102.4); //sensitivity limit 0 to 10, reversed
 				
 				//add deadband
 				if ((yjoymoveCommand < 0.2) && (yjoymoveCommand > -0.2))
@@ -2766,7 +2833,7 @@ gboolean on_joystick_change (GIOChannel *source, GIOCondition condition, gpointe
 				yjoymoveRaw = yjoymoveCommand;
 			}
 
-			if (js.number == 0) //RH JOY RIGHT/LEFT
+			if (js.number == 3) //RH JOY RIGHT/LEFT
 			{
 				joyValue2 = js.value/32; //convert to appx 0 to 1024
 				//xjoymoveCommand = (float)joyValue2/102.4; //sensitivity limit 0 to 10, not reversed
@@ -2790,7 +2857,7 @@ gboolean on_joystick_change (GIOChannel *source, GIOCondition condition, gpointe
 				}
 				xjoymoveRaw = xjoymoveCommand;
 			}
-			if (js.number == 1) //RH JOY UP/DOWN
+			if (js.number == 4) //RH JOY UP/DOWN
 			{
 				joyValue2 = js.value/32; //convert to appx 0 to 1024
 				zjoymoveCommand = (float)joyValue2/102.4; //sensitivity limit 0 to 10, not reversed 
@@ -3233,6 +3300,7 @@ gboolean on_floorDrawArea_draw (GtkWidget *widget, cairo_t *cr, gpointer data)
 	
 	
 	//draw floor orange grid lines
+	/*
 	cairo_set_line_width (cr, 0.35);
 	cairo_set_source_rgba (cr, ORG01);
 	for (i = -200; i<=200; i+=20)
@@ -3246,6 +3314,7 @@ gboolean on_floorDrawArea_draw (GtkWidget *widget, cairo_t *cr, gpointer data)
 		cairo_line_to (cr, 200, i);
 	}
 	cairo_stroke(cr);	
+	*/
 
 	cairo_set_line_width (cr, 1.0);
 	cairo_set_source_rgba (cr, BLU02);
@@ -3260,16 +3329,16 @@ gboolean on_floorDrawArea_draw (GtkWidget *widget, cairo_t *cr, gpointer data)
 	cairo_line_to (cr, 290, 0);
 	cairo_stroke(cr);
 	
-
 	//draw system boundary
 	cairo_set_line_width (cr, 2.0);
 	cairo_set_source_rgba (cr, RED01);
 	cairo_set_dash(cr, dash1, 2, 0);
-	cairo_rectangle (cr,
-		systemBoundary.xmin/MP_SCALE, //corner x
-		systemBoundary.zmin/MP_SCALE, //corner z
-		(systemBoundary.xmax - systemBoundary.xmin)/MP_SCALE,  //length x
-		(systemBoundary.zmax - systemBoundary.zmin)/MP_SCALE); //length z
+
+	cairo_move_to (cr, BP1.x/MP_SCALE, BP1.z/MP_SCALE);
+	cairo_line_to (cr, BP2.x/MP_SCALE, BP2.z/MP_SCALE);
+	cairo_line_to (cr, BP3.x/MP_SCALE, BP3.z/MP_SCALE);
+	cairo_line_to (cr, BP4.x/MP_SCALE, BP4.z/MP_SCALE);
+	cairo_line_to (cr, BP1.x/MP_SCALE, BP1.z/MP_SCALE);
 	cairo_stroke(cr);
 	cairo_set_dash(cr, dash1, OFF, 0);
 
@@ -3309,10 +3378,10 @@ gboolean on_floorDrawArea_draw (GtkWidget *widget, cairo_t *cr, gpointer data)
 	//draw boundary value text
 	cairo_set_font_size(cr, 14);
 	cairo_set_source_rgba (cr, RED01);
-	cairo_move_to(cr, systemBoundary.xmin/MP_SCALE-20, -100);
+	cairo_move_to(cr, systemBoundary.xmin/MP_SCALE-20, -140);
 	sprintf(strMisc, "%3.1f m", systemBoundary.xmin/100);
 	cairo_show_text(cr, strMisc);
-	cairo_move_to(cr, systemBoundary.xmax/MP_SCALE-20, -100);
+	cairo_move_to(cr, systemBoundary.xmax/MP_SCALE-20, -140);
 	sprintf(strMisc, "%3.1f m", systemBoundary.xmax/100);
 	cairo_show_text(cr, strMisc);
 
@@ -4353,32 +4422,44 @@ void on_btnBoundarySet_clicked ()
 
 	const gchar *strEntryValue;
 	
-	strEntryValue = g_strdup_printf("%3.2f", systemBoundary.xmin/100.0);
-	gtk_entry_set_text(g_setBoundaryXmin,strEntryValue);
-	strEntryValue = g_strdup_printf("%3.2f", systemBoundary.xmax/100.0);
-	gtk_entry_set_text(g_setBoundaryXmax,strEntryValue);
+	strEntryValue = g_strdup_printf("%3.2f", BP1.x/100.0);
+	gtk_entry_set_text(g_setBoundaryP1X,strEntryValue);
+	strEntryValue = g_strdup_printf("%3.2f", BP1.z/100.0);
+	gtk_entry_set_text(g_setBoundaryP1Z,strEntryValue);
+	strEntryValue = g_strdup_printf("%3.2f", BP2.x/100.0);
+	gtk_entry_set_text(g_setBoundaryP2X,strEntryValue);
+	strEntryValue = g_strdup_printf("%3.2f", BP2.z/100.0);
+	gtk_entry_set_text(g_setBoundaryP2Z,strEntryValue);
+	strEntryValue = g_strdup_printf("%3.2f", BP3.x/100.0);
+	gtk_entry_set_text(g_setBoundaryP3X,strEntryValue);
+	strEntryValue = g_strdup_printf("%3.2f", BP3.z/100.0);
+	gtk_entry_set_text(g_setBoundaryP3Z,strEntryValue);
+	strEntryValue = g_strdup_printf("%3.2f", BP4.x/100.0);
+	gtk_entry_set_text(g_setBoundaryP4X,strEntryValue);
+	strEntryValue = g_strdup_printf("%3.2f", BP4.z/100.0);
+	gtk_entry_set_text(g_setBoundaryP4Z,strEntryValue);
 
 	strEntryValue = g_strdup_printf("%3.2f", systemBoundary.ymin/100.0);
 	gtk_entry_set_text(g_setBoundaryYmin,strEntryValue);
 	strEntryValue = g_strdup_printf("%3.2f", systemBoundary.ymax/100.0);
 	gtk_entry_set_text(g_setBoundaryYmax,strEntryValue);
 
-	strEntryValue = g_strdup_printf("%3.2f", systemBoundary.zmin/100.0);
-	gtk_entry_set_text(g_setBoundaryZmin,strEntryValue);
-	strEntryValue = g_strdup_printf("%3.2f", systemBoundary.zmax/100.0);
-	gtk_entry_set_text(g_setBoundaryZmax,strEntryValue);
-
 	gtk_dialog_run(GTK_DIALOG(g_dlgBoundary));
 	gtk_widget_hide(g_dlgBoundary);
 }
 void on_dlgBoundary_response (GtkDialog *dialog, gint response_id, gpointer user_data)
 {
-	const gchar *setXmin;
-	const gchar *setXmax;
+	const gchar *setP1X;
+	const gchar *setP1Z;
+	const gchar *setP2X;
+	const gchar *setP2Z;
+	const gchar *setP3X;
+	const gchar *setP3Z;
+	const gchar *setP4X;
+	const gchar *setP4Z;
+
 	const gchar *setYmin;
 	const gchar *setYmax;
-	const gchar *setZmin;
-	const gchar *setZmax;
 	
 	if (response_id == 2) //cancel
 	{
@@ -4387,29 +4468,44 @@ void on_dlgBoundary_response (GtkDialog *dialog, gint response_id, gpointer user
 	
 	if (response_id == 1) //enter
 	{
-		setXmin = gtk_entry_get_text(g_setBoundaryXmin);
-		setXmax = gtk_entry_get_text(g_setBoundaryXmax);
+		setP1X = gtk_entry_get_text(g_setBoundaryP1X);
+		setP1Z = gtk_entry_get_text(g_setBoundaryP1Z);
+		setP2X = gtk_entry_get_text(g_setBoundaryP2X);
+		setP2Z = gtk_entry_get_text(g_setBoundaryP2Z);
+		setP3X = gtk_entry_get_text(g_setBoundaryP3X);
+		setP3Z = gtk_entry_get_text(g_setBoundaryP3Z);
+		setP4X = gtk_entry_get_text(g_setBoundaryP4X);
+		setP4Z = gtk_entry_get_text(g_setBoundaryP4Z);
+
 		setYmin = gtk_entry_get_text(g_setBoundaryYmin);
 		setYmax = gtk_entry_get_text(g_setBoundaryYmax);
-		setZmin = gtk_entry_get_text(g_setBoundaryZmin);
-		setZmax = gtk_entry_get_text(g_setBoundaryZmax);
 		
 		char *ptr;
-		systemBoundary.xmin = strtof(setXmin,&ptr)*100.0;
-		systemBoundary.xmax = strtof(setXmax,&ptr)*100.0;
+		BP1.x = strtof(setP1X,&ptr)*100.0;
+		BP1.z = strtof(setP1Z,&ptr)*100.0;
+		BP2.x = strtof(setP2X,&ptr)*100.0;
+		BP2.z = strtof(setP2Z,&ptr)*100.0;
+		BP3.x = strtof(setP3X,&ptr)*100.0;
+		BP3.z = strtof(setP3Z,&ptr)*100.0;
+		BP4.x = strtof(setP4X,&ptr)*100.0;
+		BP4.z = strtof(setP4Z,&ptr)*100.0;
+
 		systemBoundary.ymin = strtof(setYmin,&ptr)*100.0;
 		systemBoundary.ymax = strtof(setYmax,&ptr)*100.0;
-		systemBoundary.zmin = strtof(setZmin,&ptr)*100.0;
-		systemBoundary.zmax = strtof(setZmax,&ptr)*100.0;
 
 		systemBoundary.yminSaved = systemBoundary.ymin;
 		
-		g_key_file_set_double (gkfd,"boundary","boundaryXmin",systemBoundary.xmin);
-		g_key_file_set_double (gkfd,"boundary","boundaryXmax",systemBoundary.xmax);
+		g_key_file_set_double (gkfd,"boundary","boundaryP1X",BP1.x);
+		g_key_file_set_double (gkfd,"boundary","boundaryP1Z",BP1.z);
+		g_key_file_set_double (gkfd,"boundary","boundaryP2X",BP2.x);
+		g_key_file_set_double (gkfd,"boundary","boundaryP2Z",BP2.z);
+		g_key_file_set_double (gkfd,"boundary","boundaryP3X",BP3.x);
+		g_key_file_set_double (gkfd,"boundary","boundaryP3Z",BP3.z);
+		g_key_file_set_double (gkfd,"boundary","boundaryP4X",BP4.x);
+		g_key_file_set_double (gkfd,"boundary","boundaryP4Z",BP4.z);
+
 		g_key_file_set_double (gkfd,"boundary","boundaryYmin",systemBoundary.ymin);
 		g_key_file_set_double (gkfd,"boundary","boundaryYmax",systemBoundary.ymax);
-		g_key_file_set_double (gkfd,"boundary","boundaryZmin",systemBoundary.zmin);
-		g_key_file_set_double (gkfd,"boundary","boundaryZmax",systemBoundary.zmax);
 		
 		g_key_file_save_to_file(gkfd,CONFIG_FILE_NAME,NULL);
 
