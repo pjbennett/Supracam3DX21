@@ -653,6 +653,20 @@ float DFcm[5];
 
 int joystickStatus = 0;
 
+int lefthand_updown = 0;
+int lefthand_leftright = 1;
+int righthand_updown = 3;
+int righthand_leftright = 4;
+
+int lefthand_updown_reversed = 1;
+int lefthand_leftright_reversed = 1;
+int righthand_updown_reversed = 1;
+int righthand_leftright_reversed = 1;
+
+int lefthand_updown_range = 5;
+int lefthand_leftright_range = 10;
+int righthand_updown_range = 10;
+int righthand_leftright_range = 10;
 
 //---------- TEST VARIABLES -----------
 #define WINCH_IGNORE_ALL 	100
@@ -739,6 +753,20 @@ int main (int argc, char *argv[])
 	BP4.x = g_key_file_get_double (gkfd,"boundary","boundaryP4X",NULL);
 	BP4.z = g_key_file_get_double (gkfd,"boundary","boundaryP4Z",NULL);
 
+	lefthand_updown = g_key_file_get_double (gkfd,"joystick","lefthand_updown",NULL);
+	lefthand_leftright = g_key_file_get_double (gkfd,"joystick","lefthand_leftright",NULL);
+	righthand_updown = g_key_file_get_double (gkfd,"joystick","righthand_updown",NULL);
+	righthand_leftright = g_key_file_get_double (gkfd,"joystick","righthand_leftright",NULL);
+
+	lefthand_updown_reversed = g_key_file_get_double (gkfd,"joystick","lefthand_updown_reversed",NULL);
+	lefthand_leftright_reversed = g_key_file_get_double (gkfd,"joystick","lefthand_leftright_reversed",NULL);
+	righthand_updown_reversed = g_key_file_get_double (gkfd,"joystick","righthand_updown_reversed",NULL);
+	righthand_leftright_reversed = g_key_file_get_double (gkfd,"joystick","righthand_leftright_reversed",NULL);
+
+	lefthand_updown_range = g_key_file_get_double (gkfd,"joystick","lefthand_updown_range",NULL);
+	lefthand_leftright_range = g_key_file_get_double (gkfd,"joystick","lefthand_leftright_range",NULL);
+	righthand_updown_range = g_key_file_get_double (gkfd,"joystick","righthand_updown_range",NULL);
+	righthand_leftright_range = g_key_file_get_double (gkfd,"joystick","righthand_leftright_range",NULL);
 
 	systemBoundary.floor = ON;
 	systemBoundary.yminSaved = systemBoundary.ymin;
@@ -2809,21 +2837,13 @@ gboolean on_joystick_change (GIOChannel *source, GIOCondition condition, gpointe
 			}
 			
 
-			//if (js.number == 1) //LH JOY RIGHT/LEFT
-			//{
-			//	joyValue2 = js.value/32; //convert to appx 0 to 1024
-			//	pjoymoveCommand = (float)joyValue2/-341.0; //sensitivity limit 0 to 3, reversed
-			//	joytest1 = (float)joyValue2/-341.0; //sensitivity limit 0 to 3
-			//}
+			//no mapping for lefthand_leftright - not usually used
 
-			if (js.number == 1) //LH JOY UP/DOWN
+			if (js.number == lefthand_updown) //LH JOY UP/DOWN
 			{
+				float lhup_value = (1024.0/(float)lefthand_updown_range) * (float)lefthand_updown_reversed;
 				joyValue2 = js.value/32; //convert to appx 0 to 1024
-				//yjoymoveCommand = (float)joyValue2/-341.0; //sensitivity limit 0 to 3, reversed
-				//yjoymoveCommand = ((float)joyValue2/51.2); //sensitivity limit 0 to 20, not reversed
-				//yjoymoveCommand = ((float)joyValue2/34.1); //sensitivity limit 0 to 30, not reversed
-				//yjoymoveCommand = ((float)joyValue2/102.4); //sensitivity limit 0 to 10, not reversed
-				yjoymoveCommand = ((float)joyValue2/-102.4); //sensitivity limit 0 to 10, reversed
+				yjoymoveCommand = ((float)joyValue2/lhup_value); //sensitivity limit 0 to 10, reversed
 				
 				//add deadband
 				if ((yjoymoveCommand < 0.2) && (yjoymoveCommand > -0.2))
@@ -2833,22 +2853,15 @@ gboolean on_joystick_change (GIOChannel *source, GIOCondition condition, gpointe
 				yjoymoveRaw = yjoymoveCommand;
 			}
 
-			if (js.number == 3) //RH JOY RIGHT/LEFT
+			if (js.number == righthand_leftright) //RH JOY LEFT/RIGHT
 			{
+				float rhlr_value = (1024.0/(float)righthand_leftright_range) * (float)righthand_leftright_reversed;
 				joyValue2 = js.value/32; //convert to appx 0 to 1024
-				//xjoymoveCommand = (float)joyValue2/102.4; //sensitivity limit 0 to 10, not reversed
-				//xjoymoveCommand = (float)joyValue2/-102.4; //sensitivity limit 0 to 10, reversed
-				//xjoymoveCommand = ((float)joyValue2/-25.6); //sensitivity limit 0 to 40, reversed
-				//xjoymoveCommand = ((float)joyValue2/25.6); //sensitivity limit 0 to 40, not reversed
-				//xjoymoveCommand = ((float)joyValue2/12.8); //sensitivity limit 0 to 80, not reversed
-				//xjoymoveCommand = ((float)joyValue2/38.4); //sensitivity limit 0 to 30, not reversed
-				xjoymoveCommand = ((float)joyValue2/51.2); //sensitivity limit 0 to 20, not reversed
-				//xjoymoveCommand = ((float)joyValue2/30.0); //sensitivity limit 0 to 30ish, not reversed
+				xjoymoveCommand = ((float)joyValue2/rhlr_value); //sensitivity limit 0 to 20, not reversed
 
-				//additional limit to joystick input
+				//additional limit to joystick input - ??? why was this added?
 				if (xjoymoveCommand > 30)
 					xjoymoveCommand = 30;
-					
 
 				//add deadband
 				if ((xjoymoveCommand < 0.2) && (xjoymoveCommand > -0.2))
@@ -2857,14 +2870,11 @@ gboolean on_joystick_change (GIOChannel *source, GIOCondition condition, gpointe
 				}
 				xjoymoveRaw = xjoymoveCommand;
 			}
-			if (js.number == 4) //RH JOY UP/DOWN
+			if (js.number == righthand_updown) //RH JOY UP/DOWN
 			{
+				float rhud_value = (1024.0/(float)righthand_updown_range) * (float)righthand_updown_reversed;
 				joyValue2 = js.value/32; //convert to appx 0 to 1024
-				zjoymoveCommand = (float)joyValue2/102.4; //sensitivity limit 0 to 10, not reversed 
-				//zjoymoveCommand = (float)joyValue2/-25.6; //sensitivity limit 0 to 40, reversed
-				//zjoymoveCommand = (float)joyValue2/25.6; //sensitivity limit 0 to 40, not reversed
-				//zjoymoveCommand = (float)joyValue2/38.4; //sensitivity limit 0 to 30, not reversed
-				//zjoymoveCommand = (float)joyValue2/51.2; //sensitivity limit 0 to 20, not reversed
+				zjoymoveCommand = (float)joyValue2/rhud_value; //sensitivity limit 0 to 10, not reversed 
 
 				//add deadband
 				if ((zjoymoveCommand < 0.2) && (zjoymoveCommand > -0.2))
