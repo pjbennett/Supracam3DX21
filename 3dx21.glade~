@@ -1685,6 +1685,38 @@
             <property name="y">106</property>
           </packing>
         </child>
+        <child>
+          <object class="GtkButton" id="btnViewZoomIn">
+            <property name="label" translatable="yes">ZOOM IN</property>
+            <property name="width_request">100</property>
+            <property name="height_request">34</property>
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">True</property>
+            <property name="resize_mode">immediate</property>
+            <signal name="clicked" handler="on_btnViewZoomIn_clicked" swapped="no"/>
+          </object>
+          <packing>
+            <property name="x">1150</property>
+            <property name="y">630</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkButton" id="btnViewZoomOut">
+            <property name="label" translatable="yes">ZOOM OUT</property>
+            <property name="width_request">100</property>
+            <property name="height_request">30</property>
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">True</property>
+            <property name="resize_mode">immediate</property>
+            <signal name="clicked" handler="on_btnViewZoomOut_clicked" swapped="no"/>
+          </object>
+          <packing>
+            <property name="x">690</property>
+            <property name="y">630</property>
+          </packing>
+        </child>
       </object>
     </child>
   </object>
@@ -1768,7 +1800,7 @@
                 <property name="height_request">30</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">X (+left/-right)</property>
+                <property name="label" translatable="yes">X (-left/+right)</property>
                 <attributes>
                   <attribute name="foreground" value="#88888a8a8585"/>
                 </attributes>
@@ -1813,7 +1845,7 @@
                 <property name="height_request">30</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Z (+front/-back)</property>
+                <property name="label" translatable="yes">Z (-front/+back)</property>
                 <attributes>
                   <attribute name="foreground" value="#88888a8a8585"/>
                 </attributes>

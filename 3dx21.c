@@ -28,11 +28,11 @@
 //06-MAR-2020 v1.20.1 changed floor on/off button to set floor at 2m
 
 //26-JUL-2021 v21.01.01 added triangular boundaries, other small fixes
+//27-JUL-2021 v21.01.02 added plan view zoom in and out feature
 
 
 
-
-#define BUILD_NUMBER "21.01.01"
+#define BUILD_NUMBER "21.01.02"
 #define GLADE_FILE_NAME "3dx21.glade"
 #define CCS_FILE_NAME "3dx21.css"
 
@@ -668,6 +668,8 @@ int lefthand_leftright_range = 10;
 int righthand_updown_range = 10;
 int righthand_leftright_range = 10;
 
+int planViewScale = 20;
+
 //---------- TEST VARIABLES -----------
 #define WINCH_IGNORE_ALL 	100
 #define WINCH_IGNORE_ALL_BUT_1 	101
@@ -675,7 +677,7 @@ int righthand_leftright_range = 10;
 #define WINCH_IGNORE_ALL_BUT_3 	103
 #define WINCH_IGNORE_ALL_BUT_4 	104
 
-int simulationTest = TRUE;
+int simulationTest = FALSE;
 
 //-------------------------------------
 
@@ -2202,7 +2204,7 @@ gboolean timeoutFunction (gpointer data)
 
 
 	//sprintf(strMisc, "JOYSTICK PAN: %6.3f", pjoymoveCommand);
-	sprintf(strMisc, "BP1.x: %06.2f", BP1.x);
+	sprintf(strMisc, "Scale: %06.2f", (float)planViewScale);
 	gtk_label_set_text(GTK_LABEL(g_lbl_joyvalue), strMisc);
 
 	sprintf(strMisc, "BP1.z: %06.2f", BP1.z);
@@ -3344,11 +3346,11 @@ gboolean on_floorDrawArea_draw (GtkWidget *widget, cairo_t *cr, gpointer data)
 	cairo_set_source_rgba (cr, RED01);
 	cairo_set_dash(cr, dash1, 2, 0);
 
-	cairo_move_to (cr, BP1.x/MP_SCALE, BP1.z/MP_SCALE);
-	cairo_line_to (cr, BP2.x/MP_SCALE, BP2.z/MP_SCALE);
-	cairo_line_to (cr, BP3.x/MP_SCALE, BP3.z/MP_SCALE);
-	cairo_line_to (cr, BP4.x/MP_SCALE, BP4.z/MP_SCALE);
-	cairo_line_to (cr, BP1.x/MP_SCALE, BP1.z/MP_SCALE);
+	cairo_move_to (cr, BP1.x/planViewScale, BP1.z/planViewScale);
+	cairo_line_to (cr, BP2.x/planViewScale, BP2.z/planViewScale);
+	cairo_line_to (cr, BP3.x/planViewScale, BP3.z/planViewScale);
+	cairo_line_to (cr, BP4.x/planViewScale, BP4.z/planViewScale);
+	cairo_line_to (cr, BP1.x/planViewScale, BP1.z/planViewScale);
 	cairo_stroke(cr);
 	cairo_set_dash(cr, dash1, OFF, 0);
 
@@ -3357,7 +3359,7 @@ gboolean on_floorDrawArea_draw (GtkWidget *widget, cairo_t *cr, gpointer data)
 	cairo_set_source_rgba (cr, RED01);
 	for (i = 0; i<4; i++)
 	{
-		cairo_arc(cr,pulleyLocation[i].xLocation/MP_SCALE,pulleyLocation[i].zLocation/MP_SCALE,4,0,2*G_PI);
+		cairo_arc(cr,pulleyLocation[i].xLocation/planViewScale,pulleyLocation[i].zLocation/planViewScale,4,0,2*G_PI);
 		cairo_stroke(cr);
 	}
 
@@ -3386,20 +3388,20 @@ gboolean on_floorDrawArea_draw (GtkWidget *widget, cairo_t *cr, gpointer data)
 	cairo_show_text(cr, strMisc);
 
 	//draw boundary value text
-	cairo_set_font_size(cr, 14);
+	cairo_set_font_size(cr, 16);
 	cairo_set_source_rgba (cr, RED01);
-	cairo_move_to(cr, systemBoundary.xmin/MP_SCALE-20, -140);
-	sprintf(strMisc, "%3.1f m", systemBoundary.xmin/100);
+	cairo_move_to(cr, -290, -150);
+	sprintf(strMisc, "Xmin %3.1f m", systemBoundary.xmin/100);
 	cairo_show_text(cr, strMisc);
-	cairo_move_to(cr, systemBoundary.xmax/MP_SCALE-20, -140);
-	sprintf(strMisc, "%3.1f m", systemBoundary.xmax/100);
+	cairo_move_to(cr, 190, -150);
+	sprintf(strMisc, "Xmax %3.1f m", systemBoundary.xmax/100);
 	cairo_show_text(cr, strMisc);
 
-	cairo_move_to(cr, -250, systemBoundary.zmin/MP_SCALE);
-	sprintf(strMisc, "%3.1f m", systemBoundary.zmin/100);
+	cairo_move_to(cr, -280, -50);
+	sprintf(strMisc, "Zmin %3.1f m", systemBoundary.zmin/100);
 	cairo_show_text(cr, strMisc);
-	cairo_move_to(cr, -250, systemBoundary.zmax/MP_SCALE);
-	sprintf(strMisc, "%3.1f m", systemBoundary.zmax/100);
+	cairo_move_to(cr, -280, 50);
+	sprintf(strMisc, "Zmax %3.1f m", systemBoundary.zmax/100);
 	cairo_show_text(cr, strMisc);
 	
 
@@ -3432,11 +3434,11 @@ gboolean on_floorDrawArea_draw (GtkWidget *widget, cairo_t *cr, gpointer data)
 		{
 			cairo_set_source_rgba (cr, RED01);
 		}
-	cairo_move_to(cr, motionData[0].xPosition/MP_SCALE, motionData[0].zPosition/MP_SCALE);
+	cairo_move_to(cr, motionData[0].xPosition/planViewScale, motionData[0].zPosition/planViewScale);
 
 	for (i=0; i<motionDataFrames; i++)
 	{
-		cairo_line_to(cr, motionData[i].xPosition/MP_SCALE, motionData[i].zPosition/MP_SCALE);
+		cairo_line_to(cr, motionData[i].xPosition/planViewScale, motionData[i].zPosition/planViewScale);
 	}
 	cairo_stroke(cr);
 
@@ -3445,8 +3447,8 @@ gboolean on_floorDrawArea_draw (GtkWidget *widget, cairo_t *cr, gpointer data)
 	cairo_set_source_rgba (cr, YEL03);
 	for (i = 0; i<4; i++)
 	{
-		cairo_move_to (cr, pulleyLocation[i].xLocation/MP_SCALE, pulleyLocation[i].zLocation/MP_SCALE);
-		cairo_line_to (cr, motionCommand.xPosition/MP_SCALE,motionCommand.zPosition/MP_SCALE);
+		cairo_move_to (cr, pulleyLocation[i].xLocation/planViewScale, pulleyLocation[i].zLocation/planViewScale);
+		cairo_line_to (cr, motionCommand.xPosition/planViewScale,motionCommand.zPosition/planViewScale);
 	}
 	cairo_stroke(cr);
 
@@ -3454,8 +3456,8 @@ gboolean on_floorDrawArea_draw (GtkWidget *widget, cairo_t *cr, gpointer data)
 	cairo_set_line_width (cr, 1.5);
 	cairo_set_source_rgba (cr, YEL01);
 	cairo_rectangle (cr,
-		(motionCommand.xPosition/MP_SCALE)-3, //corner x
-		(motionCommand.zPosition/MP_SCALE)-3, //corner z
+		(motionCommand.xPosition/planViewScale)-3, //corner x
+		(motionCommand.zPosition/planViewScale)-3, //corner z
 		6, 6); //size
 	cairo_stroke(cr);
 
@@ -3463,8 +3465,8 @@ gboolean on_floorDrawArea_draw (GtkWidget *widget, cairo_t *cr, gpointer data)
 	cairo_set_line_width (cr, 1.5);
 	cairo_set_source_rgba (cr, YEL01);
 	cairo_rectangle (cr,
-		(motionData[mdcount].xPosition/MP_SCALE)-2, //corner x
-		(motionData[mdcount].zPosition/MP_SCALE)-2, //corner z
+		(motionData[mdcount].xPosition/planViewScale)-2, //corner x
+		(motionData[mdcount].zPosition/planViewScale)-2, //corner z
 		4, 4); //size
 	cairo_stroke(cr);
 
@@ -4672,6 +4674,24 @@ void on_dlgSurvey_response (GtkDialog *dialog, gint response_id, gpointer user_d
 	}
 }
 
+
+void on_btnViewZoomOut_clicked ()
+{
+	planViewScale += 2;
+	if (planViewScale > 60)
+	{
+		planViewScale = 60;
+	}
+}
+
+void on_btnViewZoomIn_clicked ()
+{
+	planViewScale -= 2;
+	if (planViewScale < 2)
+	{
+		planViewScale = 2;
+	}
+}
 
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
