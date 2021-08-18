@@ -27,7 +27,7 @@ The Advantech PCI-1612 serial port card (EXAR 17V35X chip) requires an older ver
 
 11. Verify elx runs properly (might need to change serial port names in elx-config.ini file)
 
-12. Add user to dialout group (to access tty devices) using "sudo adducer <username> dialout". Need to logout and re-login to have access to the new group 
+12. Add user to dialout group (to access tty devices) using "sudo adduser <username> dialout". Need to logout and re-login to have access to the new group 
 
 
 
